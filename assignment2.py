@@ -90,6 +90,16 @@ def segment(processed_img, orig_image):
     cv2.drawContours(img_resized, [screenCnt], -1, (0, 255, 0), 3)
     cv2.imshow("image with detected license plate", img_resized)
     cv2.waitKey(0)
+
+def tresholding_otsu(img):
+    #Use median blur first to remove some noise when tresholding
+    blurred = cv2.medianBlur(img,5)
+    #Apply Otsu's Binarization
+    ret,otsu = cv2.threshold(blurred,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    
+    return otsu
+
+
      
 if __name__ == "__main__":
     # IMAGE PRE-PROCESSING

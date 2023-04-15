@@ -5,12 +5,12 @@ from PIL import Image
 from pillow_heif import register_heif_opener
 
 #Open heic format image
-register_heif_opener()
-image = Image.open('carplate.heic')
+# register_heif_opener()
+# image = Image.open('carplate.heic')
 
 
-image.save("test1.jpg")
-image = cv2.imread('test4.jpg')
+# image.save("test1.jpg")
+image = cv2.imread('images/IMG1.jpg')
 
 #Turn image into grayscale image
 image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -20,6 +20,19 @@ image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 blurred = cv2.medianBlur(image,5)
 #Apply Otsu's Binarization
 ret,image = cv2.threshold(blurred,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+
+
+
+# Filter using contour area and remove big white part
+cnts = cv2.findContours(image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+for c in cnts:
+    area = cv2.contourArea(c)
+    if area > 8000:
+        cv2.drawContours(image, [c], -1, (0,0,0), -1)
+
+
+cv2.imwrite("result2.jpg", image)
 
 ## Aply adaptive tresholding
 # image = cv2.adaptiveThreshold(blurred, 255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 25, 30)
@@ -43,7 +56,7 @@ ret,image = cv2.threshold(blurred,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 # image = cv2.addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0)
 
 
-cv2.imwrite("result.jpg", image)
+
 
 
 
