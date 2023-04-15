@@ -2,9 +2,8 @@
 import cv2
 import numpy as np
 from skimage.util import random_noise
-from PIL import Image, ImageFilter
-from scipy.signal import wiener
-import matplotlib.pyplot as plt
+from imutils import contours
+import pytesseract
 
 
 def noise_reduction(img):
@@ -35,12 +34,10 @@ def add_noise(img):
 
     # Convert back to non-array
     img_to_show = np.array(255*img, dtype = 'uint8')
-    cv2.imshow('blur',img_to_show)
-    cv2.waitKey(0)
     return img_to_show
 
 def resize(img):
-    scale_percent = 25 # percent of original size
+    scale_percent = 30 # percent of original size
     width = int(img.shape[1] * scale_percent / 100)
     height = int(img.shape[0] * scale_percent / 100)
     dim = (width, height)
@@ -52,25 +49,81 @@ def normalize(img):
     norm_image = cv2.equalizeHist(norm_image)
     return img
 
+def segment(processed_img, orig_image):
+
+    # Detecting the edges with Canny algorithm
+    img_edged = cv2.Canny(processed_img, 30, 200) 
+    # cv2.imshow("Canny Image", edged)
+    # cv2.waitKey(0)
+
+    # Finding contours from the edged image
+    cnts, _ = cv2.findContours(img_edged.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    # image_copy = orig_image.copy() # making the copy of the resized image
+    # cv2.drawContours(image_copy ,cnts,-1,(0,255,0),3) # draw contours on the image
+    # # cv2.imshow("contours",image1)
+    # # cv2.waitKey(0)
+
+    # Sorting the identified contours
+    cnts = sorted(cnts, key = cv2.contourArea, reverse = True) [:30] # sorting contours based on the min are of 30 and ignoring the ones below that
+    screenCnt = None
+    image2 = orig_image.copy()
+    cv2.drawContours(image2,cnts,-1,(0,255,0),3)
+    cv2.imshow("Top 30 contours",image2)
+    cv2.waitKey(0)
+
+    # Finding contours with four sides
+    i=0
+    for c in cnts:
+        perimeter = cv2.arcLength(c, True)
+        approx = cv2.approxPolyDP(c, 0.018 * perimeter, True) # approximates the curve of polygon with precision
+        # choosing contours with four sides
+        if len(approx) == 4: 
+            screenCnt = approx
+            x,y,w,h = cv2.boundingRect(c) # finding coordinates
+            print(x,y,w,h)
+            new_img=img_resized[y:y+h,x:x+w] # create new image of with detected car plate
+            cv2.imwrite('./'+str(i)+'.jpg',new_img)
+            i+=1
+            # break
+
+    # Drawing the selected contour on the original image
+    cv2.drawContours(img_resized, [screenCnt], -1, (0, 255, 0), 3)
+    cv2.imshow("image with detected license plate", img_resized)
+    cv2.waitKey(0)
+     
 if __name__ == "__main__":
-    # Image pre-processing
+    # IMAGE PRE-PROCESSING
 
     # Load image
-    img = cv2.imread("images/IMG_1201.jpg")
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) # converting to gray scale
+    orig_image = cv2.imread("images/IMG8.jpg")
+    # cv2.imshow("Original Image",orig_image)
+    # cv2.waitKey(0)
 
     # Step 1: Image resizing
-    img = resize(img)
+    img_resized = resize(orig_image)
+    # cv2.imshow("Resized image",img_resized)
+    # cv2.waitKey(0)
+
+    # convert picture to gray scale
+    img_gray = cv2.cvtColor(img_resized, cv2.COLOR_BGR2GRAY)
+    # cv2.imshow("Gray Scale Image", img_gray)
+    # cv2.waitKey(0)
 
     # Step 2: Normalization
-    img = normalize(img)
+    img = normalize(img_gray)
+    # cv2.imshow("Normalized Image", img)
+    # cv2.waitKey(0)
 
     # Step 3: Noise reduction
-    # Adding noise to an image to test the noise reduction technique
-    img = add_noise(img)
+    img = add_noise(img) # adding noise to an image tokj test the noise reduction technique
+    # cv2.imshow("Noise Image", img)
+    # cv2.waitKey(0)
+
+    # Remove noise
     img = noise_reduction(img)
-    # # Step 3: Image segmentation
+    cv2.imshow("Noise Reduced Image", img)
+    cv2.waitKey(0)
 
-    # Step 4: Perspective correction
-
-
+    # Step 4: Image segmentation
+    segment(img, img_resized)
+    
