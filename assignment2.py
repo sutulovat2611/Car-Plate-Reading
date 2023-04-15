@@ -50,21 +50,24 @@ def normalize(img):
     return img
 
 def segment(processed_img, orig_image):
+    _,thresh = cv2.threshold(processed_img,100,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    cv2.imshow("Thresh Image", thresh)
+    cv2.waitKey(0)
 
     # Detecting the edges with Canny algorithm
     img_edged = cv2.Canny(processed_img, 30, 200) 
-    # cv2.imshow("Canny Image", edged)
-    # cv2.waitKey(0)
+    cv2.imshow("Canny Image", img_edged)
+    cv2.waitKey(0)
 
     # Finding contours from the edged image
-    cnts, _ = cv2.findContours(img_edged.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    cnts, _ = cv2.findContours(thresh.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
     # image_copy = orig_image.copy() # making the copy of the resized image
     # cv2.drawContours(image_copy ,cnts,-1,(0,255,0),3) # draw contours on the image
     # # cv2.imshow("contours",image1)
     # # cv2.waitKey(0)
 
     # Sorting the identified contours
-    cnts = sorted(cnts, key = cv2.contourArea, reverse = True) [:30] # sorting contours based on the min are of 30 and ignoring the ones below that
+    cnts = sorted(cnts, key = cv2.contourArea, reverse = True) [:30] # sorting contours based on the min of 30 and ignoring the ones below that
     screenCnt = None
     image2 = orig_image.copy()
     cv2.drawContours(image2,cnts,-1,(0,255,0),3)
@@ -80,11 +83,10 @@ def segment(processed_img, orig_image):
         if len(approx) == 4: 
             screenCnt = approx
             x,y,w,h = cv2.boundingRect(c) # finding coordinates
-            print(x,y,w,h)
             new_img=img_resized[y:y+h,x:x+w] # create new image of with detected car plate
             cv2.imwrite('./'+str(i)+'.jpg',new_img)
             i+=1
-            # break
+            break
 
     # Drawing the selected contour on the original image
     cv2.drawContours(img_resized, [screenCnt], -1, (0, 255, 0), 3)
@@ -95,7 +97,7 @@ if __name__ == "__main__":
     # IMAGE PRE-PROCESSING
 
     # Load image
-    orig_image = cv2.imread("images/IMG8.jpg")
+    orig_image = cv2.imread("images/IMG5.jpg")
     # cv2.imshow("Original Image",orig_image)
     # cv2.waitKey(0)
 
@@ -106,8 +108,8 @@ if __name__ == "__main__":
 
     # convert picture to gray scale
     img_gray = cv2.cvtColor(img_resized, cv2.COLOR_BGR2GRAY)
-    # cv2.imshow("Gray Scale Image", img_gray)
-    # cv2.waitKey(0)
+    cv2.imshow("Gray Scale Image", img_gray)
+    cv2.waitKey(0)
 
     # Step 2: Normalization
     img = normalize(img_gray)
@@ -125,5 +127,5 @@ if __name__ == "__main__":
     cv2.waitKey(0)
 
     # Step 4: Image segmentation
-    segment(img, img_resized)
+    segment(img_gray, img_resized)
     

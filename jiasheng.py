@@ -2,15 +2,12 @@ import cv2
 from matplotlib import pyplot as plt
 import numpy as np
 from PIL import Image
-from pillow_heif import register_heif_opener
+# from pillow_heif import register_heif_opener
 
 #Open heic format image
-register_heif_opener()
-image = Image.open('carplate.heic')
+# register_heif_opener()
 
-
-image.save("test1.jpg")
-image = cv2.imread('test4.jpg')
+image = cv2.imread("images/IMG1.jpg")
 
 #Turn image into grayscale image
 image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
