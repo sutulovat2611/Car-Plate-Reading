@@ -2,7 +2,7 @@ import cv2
 from matplotlib import pyplot as plt
 import numpy as np
 from PIL import Image
-from pillow_heif import register_heif_opener
+# from pillow_heif import register_heif_opener
 
 #Open heic format image
 # register_heif_opener()
