@@ -1,30 +1,42 @@
+from PIL import Image
 import cv2
 import numpy as np
+import requests
 
-img = cv2.imread("images2/025.jpg", 0)
+img = cv2.imread("images2/036.jpg")
 
-# Threshold and Invert the image to find the contours
-ret, thresh = cv2.threshold(img, 10, 255, cv2.THRESH_BINARY_INV)
+# resizing
+scale_percent = 25 # percent of original size
+width = int(img.shape[1] * scale_percent / 100)
+height = int(img.shape[0] * scale_percent / 100)
+dim = (width, height)
+resized = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
 
-# Find the contours
-contours, _ = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+# making an array of image
+image_arr = np.array(resized)
 
-x, y, r, b = [img.shape[1]/2, img.shape[0]/2, 0, 0]
-# Iterate over all the contours, and keep updating the bounding rect
+grey = cv2.cvtColor(image_arr,cv2.COLOR_BGR2GRAY)
 
-for cnt in contours:
-    rect = cv2.boundingRect(cnt)
-    if rect[0] < x:
-        x = rect[0]
-    if rect[1] < y:
-        y = rect[1]
-    if rect[0] + rect[2] > r:
-        r = rect[0] + rect[2]
-    if rect[1] + rect[3] > b:
-        b = rect[1] + rect[3]
+blur = cv2.GaussianBlur(grey,(5,5),0)
 
-bounding_rect = [x, y, r-x, b-y]
-print(bounding_rect)
+dilated = cv2.dilate(blur,np.ones((3,3)))
 
-# Debugging Purpose.
-# cv2.rectangle(img, (x, y), (r, b), np.array([0, 255, 0]), 3)
+kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
+closing = cv2.morphologyEx(dilated, cv2.MORPH_CLOSE, kernel) 
+cv2.imshow("Closing Image",closing)
+cv2.waitKey(0)
+
+car_cascade_src = 'cars.xml'
+car_cascade = cv2.CascadeClassifier(car_cascade_src)
+print(car_cascade)
+cars = car_cascade.detectMultiScale(closing, 1.1, 1)
+print(cars)
+
+cnt = 0
+for (x,y,w,h) in cars:
+    cv2.rectangle(image_arr,(x,y),(x+w,y+h),(255,0,0),2)
+    cnt += 1
+print(cnt, " cars found")
+
+cv2.imshow("Closing Image",image_arr)
+cv2.waitKey(0)

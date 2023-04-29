@@ -2,10 +2,9 @@
 import cv2
 import numpy as np
 from skimage.util import random_noise
-from imutils import contours, grab_contours
-import pytesseract
-from skimage.filters import (threshold_otsu, threshold_niblack,
-                             threshold_sauvola)
+from imutils import grab_contours
+import os
+from os import listdir
 
 
 def noise_reduction(img):
@@ -38,10 +37,15 @@ def add_noise(img):
     img_to_show = np.array(255*img, dtype = 'uint8')
     return img_to_show
 
-def resize(img):
-    scale_percent = 25 # percent of original size
-    width = int(img.shape[1] * scale_percent / 100)
-    height = int(img.shape[0] * scale_percent / 100)
+def resize(img):   
+    orig_height = img.shape[0]
+    orig_width = img.shape[1]
+    if (orig_width < 2000 or orig_height < 2000):
+        scale_percent = 60 # percent of original size
+    else:
+        scale_percent = 23 # percent of original size
+    width = int(orig_width * scale_percent / 100)
+    height = int(orig_height * scale_percent / 100)
     dim = (width, height)
     resized = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
     return resized
@@ -51,11 +55,13 @@ def normalize(img):
     norm_image = cv2.equalizeHist(norm_image)
     return img
 
-def segment(processed_img, orig_image):   
+def algorithm1(processed_img, orig_image, img_name):   
+    _, thresh = cv2.threshold(processed_img, 120, 255, cv2.THRESH_TRUNC)
+
     # Detecting the edges with Canny algorithm
-    img_edged = cv2.Canny(processed_img, 0, 200, 255) 
-    cv2.imshow("Canny Image", img_edged)
-    cv2.waitKey(0)
+    img_edged = cv2.Canny(thresh, 0, 200, 255) 
+    # cv2.imshow("Canny Image", img_edged)
+    # cv2.waitKey(0)
 
     # Finding contours from the edged image
     cnts, _ = cv2.findContours(img_edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -66,8 +72,8 @@ def segment(processed_img, orig_image):
     screenCnt = None
     image2 = orig_image.copy()
     cv2.drawContours(image2,cnts,-1,(0,255,0),3)
-    cv2.imshow("Top 30 contours",image2)
-    cv2.waitKey(0)
+    # cv2.imshow("Top 30 contours",image2)
+    # cv2.waitKey(0)
 
     # Finding contours with four sides
     i=0
@@ -80,25 +86,17 @@ def segment(processed_img, orig_image):
             aspect_ratio = w / float(h)
             if aspect_ratio > 2.5 and aspect_ratio < 5:
                 screenCnt = approx
-                print(x,y,w,h)
-                new_img=img_resized[y:y+h,x:x+w] # create new image of with detected car plate
-                cv2.imwrite('./'+str(i)+'.jpg',new_img)
+                new_img=orig_image[y:y+h,x:x+w] # create new image of with detected car plate
+                cv2.imwrite('results/'+img_name+'_alg1.jpg',new_img)
                 i+=1
                 break
 
     # Drawing the selected contour on the original image
-    cv2.drawContours(img_resized, [screenCnt], -1, (0, 255, 0), 3)
-    cv2.imshow("image with detected license plate", img_resized)
-    cv2.waitKey(0)
+    # cv2.drawContours(orig_image, [screenCnt], -1, (0, 255, 0), 3)
+    # cv2.imshow("image with detected license plate", orig_image)
+    # cv2.waitKey(0)
 
-def tresholding_otsu(img):
-    _, thresh = cv2.threshold(img, 120, 255, cv2.THRESH_TRUNC)
-    cv2.imshow("Mean Adaptive Thresholding", thresh)
-    cv2.waitKey(0)
-    return thresh
-
-
-def algorithm2(img, img_resized):
+def algorithm2(img, img_resized, img_name):
     # Smoothening images and reducing noise, while preserving edges.
     bfilter = cv2.bilateralFilter(img, 11, 17, 17)
 
@@ -122,8 +120,8 @@ def algorithm2(img, img_resized):
     cnts = grab_contours(cnts)
     cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:15]
     cv2.drawContours(img_resized, cnts, -1, (0, 255, 0), 2)
-    cv2.imshow("cont",img_resized)
-    cv2.waitKey(0)
+    # cv2.imshow("cont",img_resized)
+    # cv2.waitKey(0)
 
     # Determining the contour of the car plate
     location = None
@@ -147,8 +145,8 @@ def algorithm2(img, img_resized):
         mask = np.zeros(img.shape, np.uint8)
         new_img = cv2.drawContours(mask, [location], 0, 255, -1)
         new_img = cv2.bitwise_and(img_resized, img_resized, mask=mask)
-        cv2.imshow("bitwise",new_img)
-        cv2.waitKey(0)
+        # cv2.imshow("bitwise",new_img)
+        # cv2.waitKey(0)
         # TO BE ADDED
         (x,y) = np.where(mask==255)
         (x1, y1) = (np.min(x), np.min(y))
@@ -158,8 +156,9 @@ def algorithm2(img, img_resized):
         print("location not found")
 
     # Cropped Image
-    cv2.imshow("Cropped image",crop)
-    cv2.waitKey(0)
+    cv2.imwrite('results/'+img_name+'_alg2.jpg',crop)
+    # cv2.imshow("Cropped image",crop)
+    # cv2.waitKey(0)
     return crop
     
     # blur = cv2.GaussianBlur(crop, (5,5), 0)
@@ -171,46 +170,66 @@ def algorithm2(img, img_resized):
     # cv2.imshow("contour2",unsharp_image)
     # cv2.waitKey(0)
 
-
-
-     
-if __name__ == "__main__":
-    # IMAGE PRE-PROCESSING
-
+def processing(folder_name, image_name):
+    new_image_name = image_name[:-4] # will be used for result pictures
+    
     # Load image
-    orig_image = cv2.imread("images/014.jpg")
-    # cv2.imshow("Original Image",orig_image)
-    # cv2.waitKey(0)
+    orig_image = cv2.imread(folder_name + "/"+ image_name)
 
+    # IMAGE PRE-PROCESSING
     # Step 1: Image resizing
     img_resized = resize(orig_image)
-    # cv2.imshow("Resized image",img_resized)
-    # cv2.waitKey(0)
 
     # convert picture to gray scale
     img_gray = cv2.cvtColor(img_resized, cv2.COLOR_BGR2GRAY)
-    # cv2.imshow("Gray Scale Image", img_gray)
-    # cv2.waitKey(0)
 
     # Step 2: Normalization
     img = normalize(img_gray)
-    # cv2.imshow("Normalized Image", img)
-    # cv2.waitKey(0)
 
     # Step 3: Noise reduction
-    img = add_noise(img) # adding noise to an image tokj test the noise reduction technique
-    cv2.imshow("Noise Image", img)
-    cv2.waitKey(0)
+    img = add_noise(img) # adding noise to an image to test the noise reduction techniques
 
     # Remove noise
     img = noise_reduction(img)
-    cv2.imshow("Noise Reduced Image", img)
-    cv2.waitKey(0)
 
-    # img = tresholding_otsu(img)
+    # CAR PLATE DETECTION
+    # Step 4: Algorithm 1 to detect
+    try:
+        algorithm1(img, img_resized, new_image_name)
+    except:
+        print("Algorithm 1 did not detect the car plate for " + new_image_name +".jpg")
 
-    # # Step 4: Image segmentation
-    # segment(img, img_resized)
-    algorithm2(img, img_resized)
+    # Step 5: Algorithm 2 to detect
+    try:
+        algorithm2(img, img_resized, new_image_name)
+    except:
+        print("Algorithm 2 did not detect the car plate for " + new_image_name+".jpg")
 
-    # Set 1 success: 002, 004, 005, 006, 009, 010, 012, 014
+
+if __name__ == "__main__":
+    folder1 = "./images"
+    folder2 = "./images2"
+
+    # # Test cases for folder 2
+    # for image in listdir(folder2):
+    #     processing(folder2, image)
+
+    # Test cases for folder 1
+    for image in listdir(folder1):
+        processing(folder1, image)
+
+    # Results:
+    # Both algos together for set 2: 23/45 51% accuracy
+    # Both algos together for set 1: 9/15 60% accuracy
+    
+    # Set 1 success: 002, 004, 005, 006, 009, 010, 012, 014 (Alex's algo) 53%
+    # Set 2 success: 001,002, 003, 004, 005, 007, 009, 015, 021, 022, 023, 026, 027, 030, 033, 034, 038, 039, 042 (Alex's algo) 40%
+    # Problem: does not detect properly when there is a big gap between numbers
+    # Problem 2: gets distracted by things outside of the car 025
+
+    # Set 2 success: 000, 002, 008, 015, 019, 029 my algo
+    # Set 1 success: 011, 014 my algo
+
+
+ 
+
