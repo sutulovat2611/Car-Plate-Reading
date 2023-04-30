@@ -43,7 +43,7 @@ def resize(img):
     if (orig_width < 2000 or orig_height < 2000):
         scale_percent = 60 # percent of original size
     else:
-        scale_percent = 23 # percent of original size
+        scale_percent = 50 # percent of original size
     width = int(orig_width * scale_percent / 100)
     height = int(orig_height * scale_percent / 100)
     dim = (width, height)
@@ -53,6 +53,13 @@ def resize(img):
 def normalize(img):
     norm_image = cv2.normalize(img, None, 0 , 255,cv2.NORM_MINMAX)
     norm_image = cv2.equalizeHist(norm_image)
+    return img
+
+def adaptive_treshold(img):
+    #Median blur
+    img = cv2.medianBlur(img,5)
+    # Aply adaptive tresholding
+    img = cv2.adaptiveThreshold(img, 255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 25, 30)
     return img
 
 def algorithm1(processed_img, orig_image, img_name):   
@@ -104,16 +111,16 @@ def algorithm2(img, img_resized, img_name):
     edged = cv2.Canny(bfilter, 240, 255)
 
     # Pass the shape and size of the kernel, and get the desired kernel.
-    squareKern = cv2.getStructuringElement(cv2.MORPH_RECT, (21, 1))
+    squareKern = cv2.getStructuringElement(cv2.MORPH_RECT, (20, 1))
 
     # Difference between the erosion and dilation
     light = cv2.morphologyEx(edged, cv2.MORPH_CLOSE, squareKern)
 
     #  Erodes away the boundaries of foreground object
-    thresh = cv2.erode(light, None, iterations=1)
+    thresh = cv2.erode(light, None, iterations=2)
 
     # Increases the white region in the image or size of foreground object increases.
-    thresh = cv2.dilate(thresh, None, iterations=1)
+    thresh = cv2.dilate(thresh, None, iterations=2)
     
     # Finding contours and collecting them, then sorting
     cnts = cv2.findContours(thresh.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -187,10 +194,13 @@ def processing(folder_name, image_name):
     img = normalize(img_gray)
 
     # Step 3: Noise reduction
-    img = add_noise(img) # adding noise to an image to test the noise reduction techniques
+    # img = add_noise(img) # adding noise to an image to test the noise reduction techniques
 
     # Remove noise
     img = noise_reduction(img)
+    
+    # Aply adaptive tresholding
+    img= adaptive_treshold(img)
 
     # CAR PLATE DETECTION
     # Step 4: Algorithm 1 to detect
