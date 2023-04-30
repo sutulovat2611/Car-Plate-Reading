@@ -9,7 +9,6 @@ from os import listdir
 
 def noise_reduction(img):
 
-    # img = cv2.medianBlur(img,3)
     img = cv2.GaussianBlur(img,(3,3),1)
     img = cv2.bilateralFilter(img, 11 , 31, 27)
 
@@ -199,8 +198,6 @@ def processing(folder_name, image_name):
     # Remove noise
     img = noise_reduction(img)
     
-    # Aply adaptive tresholding
-    img= adaptive_treshold(img)
 
     # CAR PLATE DETECTION
     # Step 4: Algorithm 1 to detect
@@ -208,6 +205,9 @@ def processing(folder_name, image_name):
         algorithm1(img, img_resized, new_image_name)
     except:
         print("Algorithm 1 did not detect the car plate for " + new_image_name +".jpg")
+
+    # Apply adaptive tresholding
+    img = adaptive_treshold(img)
 
     # Step 5: Algorithm 2 to detect
     try:
@@ -225,8 +225,8 @@ if __name__ == "__main__":
     #     processing(folder2, image)
 
     # Test cases for folder 1
-    for image in listdir(folder1):
-        processing(folder1, image)
+    for image in listdir(folder2):
+        processing(folder2, image)
 
     # Results:
     # Both algos together for set 2: 23/45 51% accuracy
