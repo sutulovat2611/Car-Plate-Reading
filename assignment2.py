@@ -5,7 +5,7 @@ from skimage.util import random_noise
 from imutils import grab_contours
 import os
 from os import listdir
-
+import copy
 
 def noise_reduction(img):
 
@@ -103,6 +103,7 @@ def algorithm1(processed_img, orig_image, img_name):
     # cv2.waitKey(0)
 
 def algorithm2(img, img_resized, img_name):
+    ori_img = copy.deepcopy(img_resized)
     # Smoothening images and reducing noise, while preserving edges.
     bfilter = cv2.bilateralFilter(img, 11, 17, 17)
 
@@ -157,7 +158,7 @@ def algorithm2(img, img_resized, img_name):
         (x,y) = np.where(mask==255)
         (x1, y1) = (np.min(x), np.min(y))
         (x2, y2) = (np.max(x), np.max(y))
-        crop = img[x1-5:x2+5, y1-5:y2+5]       
+        crop = ori_img[x1-5:x2+5, y1-5:y2+5]       
     else:
         print("location not found")
 
@@ -221,24 +222,38 @@ if __name__ == "__main__":
     folder2 = "./images2"
 
     # # Test cases for folder 2
-    # for image in listdir(folder2):
-    #     processing(folder2, image)
-
-    # Test cases for folder 1
     for image in listdir(folder2):
         processing(folder2, image)
 
+    # Test cases for folder 1
+    # for image in listdir(folder1):
+    #     processing(folder1, image)
+
     # Results:
-    # Both algos together for set 2: 23/45 51% accuracy
-    # Both algos together for set 1: 9/15 60% accuracy
-    
-    # Set 1 success: 002, 004, 005, 006, 009, 010, 012, 014 (Alex's algo) 53%
-    # Set 2 success: 001,002, 003, 004, 005, 007, 009, 015, 021, 022, 023, 026, 027, 030, 033, 034, 038, 039, 042 (Alex's algo) 40%
+    # Both algos together for set 1: 23/45 51% accuracy
+    # Both algos together for set 2: 9/15 60% accuracy
+   
+    # Set 1 success: 001,002, 003, 004, 005, 007, 009, 015, 021, 022, 023, 026, 027, 030, 033, 034, 038, 039, 042 (Alex's algo) 40%
+    # Set 2 success: 002, 004, 005, 006, 009, 010, 012, 014 (Alex's algo) 53%
     # Problem: does not detect properly when there is a big gap between numbers
     # Problem 2: gets distracted by things outside of the car 025
 
-    # Set 2 success: 000, 002, 008, 015, 019, 029 my algo
-    # Set 1 success: 011, 014 my algo
+    # Set 1 success: 000, 002, 008, 015, 019, 029 my algo
+    # Set 2 success: 011, 014 my algo
+
+    # Improved Results:
+    # Both algos together for set 1: 25/45 56% accuracy
+    # Both algos together for set 2: 12/15 80% accuracy
+    
+    # Algo1:
+    # Set1 : 0,2,4,19,21,35 6/45
+    # Algo2:
+    # Set1 : 4,5,7,8,9,12,13,16,23,24,25,29,30,34,36,37,38,39,40,42  20/45
+
+    # Algo1:
+    # Set2 : 11,14  2/15
+    # Algo2:
+    # Set2 : 0,2,3,4,5,6,7,8,9,11,13,14 12/15
 
 
  
