@@ -8,7 +8,6 @@ from os import listdir
 import copy
 
 def noise_reduction(img):
-
     img = cv2.GaussianBlur(img,(3,3),1)
     img = cv2.bilateralFilter(img, 11 , 31, 27)
 
@@ -62,25 +61,18 @@ def adaptive_treshold(img):
     return img
 
 def algorithm1(processed_img, orig_image, img_name):   
+    # Thresholding
     _, thresh = cv2.threshold(processed_img, 120, 255, cv2.THRESH_TRUNC)
 
     # Detecting the edges with Canny algorithm
     img_edged = cv2.Canny(thresh, 0, 200, 255) 
-    # cv2.imshow("Canny Image", img_edged)
-    # cv2.waitKey(0)
 
     # Finding contours from the edged image
     cnts, _ = cv2.findContours(img_edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
-    
     # Sorting the identified contours
     cnts = sorted(cnts, key = cv2.contourArea, reverse = True) [:30] # sorting contours based on the min are of 30 and ignoring the ones below that
-    screenCnt = None
-    image2 = orig_image.copy()
-    cv2.drawContours(image2,cnts,-1,(0,255,0),3)
-    # cv2.imshow("Top 30 contours",image2)
-    # cv2.waitKey(0)
-
+   
     # Finding contours with four sides
     i=0
     for c in cnts:
@@ -91,16 +83,10 @@ def algorithm1(processed_img, orig_image, img_name):
             x, y, w, h = cv2.boundingRect(c)
             aspect_ratio = w / float(h)
             if aspect_ratio > 2.5 and aspect_ratio < 5:
-                screenCnt = approx
                 new_img=orig_image[y:y+h,x:x+w] # create new image of with detected car plate
                 cv2.imwrite('results/'+img_name+'_alg1.jpg',new_img)
                 i+=1
                 break
-
-    # Drawing the selected contour on the original image
-    # cv2.drawContours(orig_image, [screenCnt], -1, (0, 255, 0), 3)
-    # cv2.imshow("image with detected license plate", orig_image)
-    # cv2.waitKey(0)
 
 def algorithm2(img, img_resized, img_name):
     ori_img = copy.deepcopy(img_resized)
@@ -127,8 +113,7 @@ def algorithm2(img, img_resized, img_name):
     cnts = grab_contours(cnts)
     cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:15]
     cv2.drawContours(img_resized, cnts, -1, (0, 255, 0), 2)
-    # cv2.imshow("cont",img_resized)
-    # cv2.waitKey(0)
+   
 
     # Determining the contour of the car plate
     location = None
@@ -139,8 +124,6 @@ def algorithm2(img, img_resized, img_name):
         approx = cv2.approxPolyDP(c, epsilon, True)
         # Drawing approximate rectangle around bounding picture
         _, _, w, h = cv2.boundingRect(c)
-        # approx = cv2.approxPolyDP(c, 10, True)
-        #  len(approx) >= 2 and len(approx) < 6 and 
         # Determining the shape 
         if w/h >= 1 and w/h <=6 :
             location = approx
@@ -150,10 +133,9 @@ def algorithm2(img, img_resized, img_name):
     if location is not None:
         # masking out everything but the car plate area
         mask = np.zeros(img.shape, np.uint8)
-        new_img = cv2.drawContours(mask, [location], 0, 255, -1)
-        new_img = cv2.bitwise_and(img_resized, img_resized, mask=mask)
-        # cv2.imshow("bitwise",new_img)
-        # cv2.waitKey(0)
+        # new_img = cv2.drawContours(mask, [location], 0, 255, -1)
+        # new_img = cv2.bitwise_and(img_resized, img_resized, mask=mask)
+
         # TO BE ADDED
         (x,y) = np.where(mask==255)
         (x1, y1) = (np.min(x), np.min(y))
@@ -161,22 +143,10 @@ def algorithm2(img, img_resized, img_name):
         crop = ori_img[x1-5:x2+5, y1-5:y2+5]       
     else:
         print("location not found")
-
     # Cropped Image
     cv2.imwrite('results/'+img_name+'_alg2.jpg',crop)
-    # cv2.imshow("Cropped image",crop)
-    # cv2.waitKey(0)
     return crop
     
-    # blur = cv2.GaussianBlur(crop, (5,5), 0)
-    # unsharp_image = cv2.addWeighted(crop, 2, blur, -1, 0)
-    # # plt.imshow(cv2.cvtColor(unsharp_image, cv2.COLOR_BGR2RGB))
-    # cnts, _ = cv2.findContours(unsharp_image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    # cnts = sorted(cnts, key=lambda ctr: cv2.boundingRect(ctr)[0])
-    # cv2.drawContours(unsharp_image, cnts, -1, (0, 255, 0), 2)
-    # cv2.imshow("contour2",unsharp_image)
-    # cv2.waitKey(0)
-
 def processing(folder_name, image_name):
     new_image_name = image_name[:-4] # will be used for result pictures
     
@@ -199,7 +169,6 @@ def processing(folder_name, image_name):
     # Remove noise
     img = noise_reduction(img)
     
-
     # CAR PLATE DETECTION
     # Step 4: Algorithm 1 to detect
     try:
@@ -218,8 +187,8 @@ def processing(folder_name, image_name):
 
 
 if __name__ == "__main__":
-    folder1 = "./images"
-    folder2 = "./images2"
+    folder1 = "./set1"
+    folder2 = "./set2"
 
     # # Test cases for folder 2
     for image in listdir(folder2):
