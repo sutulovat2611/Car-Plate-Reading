@@ -97,7 +97,7 @@ def algorithm2(img, img_resized, img_name):
     edged = cv2.Canny(bfilter, 240, 255)
 
     # Pass the shape and size of the kernel, and get the desired kernel.
-    squareKern = cv2.getStructuringElement(cv2.MORPH_RECT, (20, 1))
+    squareKern = cv2.getStructuringElement(cv2.MORPH_RECT, (24, 1))
 
     # Difference between the erosion and dilation
     light = cv2.morphologyEx(edged, cv2.MORPH_CLOSE, squareKern)
@@ -164,27 +164,27 @@ def processing(folder_name, image_name):
     img_gray = cv2.cvtColor(img_resized, cv2.COLOR_BGR2GRAY)
 
     # Step 2: Normalization
-    img = normalize(img_gray)
+    img_norm = normalize(img_gray)
 
     # Step 3: Noise reduction
     # img = add_noise(img) # adding noise to an image to test the noise reduction techniques
 
     # Remove noise
-    img = noise_reduction(img)
+    img_noiseReduce = noise_reduction(img_norm)
     
     # CAR PLATE DETECTION
     # Step 4: Algorithm 1 to detect
     try:
-        algorithm1(img, img_resized, new_image_name)
+        algorithm1(img_noiseReduce, img_resized, new_image_name)
     except:
         print("Algorithm 1 did not detect the car plate for " + new_image_name +".jpg")
 
     # Apply adaptive tresholding
-    img = adaptive_treshold(img)
+    img_adapt = adaptive_treshold(img_noiseReduce)
 
     # Step 5: Algorithm 2 to detect
     try:
-        algorithm2(img, img_resized, new_image_name)
+        algorithm2(img_adapt, img_resized, new_image_name)
     except:
         print("Algorithm 2 did not detect the car plate for " + new_image_name+".jpg")
 
@@ -192,14 +192,19 @@ def processing(folder_name, image_name):
 if __name__ == "__main__":
     folder1 = "./set1"
     folder2 = "./set2"
-
-    # # Test cases for folder 2
-    for image in listdir(folder2):
-        processing(folder2, image)
+    folder3 = "./set3"
 
     # # Test cases for folder 1
     # for image in listdir(folder1):
     #     processing(folder1, image)
+
+    # # Test cases for folder 2
+    # for image in listdir(folder2):
+    #     processing(folder2, image)
+
+    # # Test cases for folder 3
+    for image in listdir(folder3):
+        processing(folder3, image)
 
     # Results:
     # Both algos together for set 1: 23/45 51% accuracy
