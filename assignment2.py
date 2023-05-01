@@ -133,8 +133,8 @@ def algorithm2(img, img_resized, img_name):
     if location is not None:
         # masking out everything but the car plate area
         mask = np.zeros(img.shape, np.uint8)
-        # new_img = cv2.drawContours(mask, [location], 0, 255, -1)
-        # new_img = cv2.bitwise_and(img_resized, img_resized, mask=mask)
+        cv2.drawContours(mask, [location], 0, 255, -1)
+        cv2.bitwise_and(img_resized, img_resized, mask=mask)
 
         # TO BE ADDED
         (x,y) = np.where(mask==255)
@@ -143,6 +143,9 @@ def algorithm2(img, img_resized, img_name):
         crop = ori_img[x1-5:x2+5, y1-5:y2+5]       
     else:
         print("location not found")
+
+
+
     # Cropped Image
     cv2.imwrite('results/'+img_name+'_alg2.jpg',crop)
     return crop
@@ -194,7 +197,7 @@ if __name__ == "__main__":
     for image in listdir(folder2):
         processing(folder2, image)
 
-    # Test cases for folder 1
+    # # Test cases for folder 1
     # for image in listdir(folder1):
     #     processing(folder1, image)
 
