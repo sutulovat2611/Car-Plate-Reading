@@ -1,27 +1,37 @@
-
 import cv2
 import numpy as np
 from skimage.util import random_noise
 from imutils import grab_contours
-import os
-from os import listdir
 import copy
 
 def noise_reduction(img):
+    """
+    noise_reduction function removes noise from the image by applying Gaussian Blur, Bilateral Filtering and Non-local means denoising.
+    Then it sharpens the image to restore the level of detail.
+    :img: the image that is to be processed
+    :return: noise reduced image
+    """
+    # Gaussian Blur
     img = cv2.GaussianBlur(img,(3,3),1)
+    # Bilateral Filtering
     img = cv2.bilateralFilter(img, 11 , 31, 27)
 
-    # Denoising
-    dst = cv2.fastNlMeansDenoising(img,None,10, 7,21)
+    # Non-local means denoising.
+    img = cv2.fastNlMeansDenoising(img,None,10, 7,21)
 
     # Sharpening
     kernel = np.array([[-1,-1,-1], 
                        [-1, 9,-1],
                        [-1,-1,-1]])
-    sharpened = cv2.filter2D(dst, -10, kernel) # applying the sharpening kernel to the input image & displaying it.
+    sharpened = cv2.filter2D(img, -10, kernel) # applying the sharpening kernel to the image
     return sharpened
 
 def add_noise(img):
+    """
+    add_noise function is needed for testing noise reduction techniques. It adds different types of noise to an image.
+    :img: the image that is to be processed
+    :return: noisy image
+    """
     # Convert into array
     img = np.array(img)
 
@@ -35,7 +45,14 @@ def add_noise(img):
     img_to_show = np.array(255*img, dtype = 'uint8')
     return img_to_show
 
-def resize(img):   
+def resize(img): 
+    """
+    As the name suggests, resize function resizes an image based on its original size. If the original dimensions are less than 2000 pixels
+    it is resized to 60% of it's original size, otherwise to 50%
+    :img: the image that is to be processed
+    :return: resized image
+    """  
+    # Determining the original width and height
     orig_height = img.shape[0]
     orig_width = img.shape[1]
     if (orig_width < 2000 or orig_height < 2000):
@@ -44,23 +61,45 @@ def resize(img):
         scale_percent = 50 # percent of original size
     width = int(orig_width * scale_percent / 100)
     height = int(orig_height * scale_percent / 100)
+    # Building an image with new dimensions
     dim = (width, height)
     resized = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
     return resized
 
 def normalize(img):
+    """
+    normalize function performs image normalization with min-max normalization and histogram equalization 
+    :img: the image that is to be processed
+    :return: normalized image
+    """
+    # Min-max normalization 
     norm_image = cv2.normalize(img, None, 0 , 255,cv2.NORM_MINMAX)
+    # Histogram equalization
     norm_image = cv2.equalizeHist(norm_image)
     return img
 
-def adaptive_treshold(img):
-    #Median blur
+def adaptive_threshold(img):
+    """
+    adaptive_threshold performs median blur and adaptive threshold in order to prepare image for car plate detection using algorithm 2
+    :img: the image that is to be processed
+    :return: normalized image
+    """
+    # Median blur
     img = cv2.medianBlur(img,5)
-    # Aply adaptive tresholding
+    # Apply adaptive thresholding
     img = cv2.adaptiveThreshold(img, 255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 25, 30)
     return img
 
 def algorithm1(processed_img, orig_image, img_name):   
+    """
+    Detects the car plate area by looking for a rectangular shape object with four sides. 
+    Uses Canny edge detection algorithm for detecting edges and findContours() function to find the contours of the detected edges.
+    Assumptions: approximate contour should have 4 sides & 2.5 < width/height < 5.
+    Then, crops out the located area and saves to the results folder.
+    :processed_img: processed image to work with
+    :orig_image: resized image to crop out the detected car plate area from it
+    :img_name: String containing the image name to save in the results folder
+    """
     # Thresholding
     _, thresh = cv2.threshold(processed_img, 120, 255, cv2.THRESH_TRUNC)
 
@@ -76,7 +115,7 @@ def algorithm1(processed_img, orig_image, img_name):
     i=0
     for c in cnts:
         perimeter = cv2.arcLength(c, True)
-        approx = cv2.approxPolyDP(c, 0.018 * perimeter, True) # approximates the curve of polygon with precision
+        approx = cv2.approxPolyDP(c, 0.018 * perimeter, True) # approximates the curve of polygon with precision 0.018
         # choosing contours with four sides
         if len(approx) == 4: 
             x, y, w, h = cv2.boundingRect(c)
@@ -88,6 +127,16 @@ def algorithm1(processed_img, orig_image, img_name):
                 break
 
 def algorithm2(img, img_resized, img_name):
+    """
+    Detects the car plate area by looking for the white numbers & characters with the black background.
+    Processes the image using Morphological Transformation, erosion and dilation.
+    Uses Canny edge detection algorithm for detecting edges and findContours() function to find the contours of the detected edges.
+    Assumptions: approximate contour should have 1 <= width/height <= 6.
+    Then, crops out the located area and saves to the results folder.
+    :processed_img: processed image to work with
+    :orig_image: resized image to crop out the detected car plate area from it
+    :img_name: String containing the image name to save in the results folder
+    """
     ori_img = copy.deepcopy(img_resized)
     # Smoothening images and reducing noise, while preserving edges.
     bfilter = cv2.bilateralFilter(img, 11, 17, 17)
@@ -113,7 +162,6 @@ def algorithm2(img, img_resized, img_name):
     cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:15]
     cv2.drawContours(img_resized, cnts, -1, (0, 255, 0), 2)
    
-
     # Determining the contour of the car plate
     location = None
     crop = None
@@ -135,7 +183,7 @@ def algorithm2(img, img_resized, img_name):
         cv2.drawContours(mask, [location], 0, 255, -1)
         cv2.bitwise_and(img_resized, img_resized, mask=mask)
 
-        # TO BE ADDED
+        # Crops out the detected area from the original image
         (x,y) = np.where(mask==255)
         (x1, y1) = (np.min(x), np.min(y))
         (x2, y2) = (np.max(x), np.max(y))
@@ -143,13 +191,16 @@ def algorithm2(img, img_resized, img_name):
     else:
         print("location not found")
 
-
-
-    # Cropped Image
+    # Saves cropped image
     cv2.imwrite('results/'+img_name+'_alg2.jpg',crop)
     return crop
     
 def processing(folder_name, image_name):
+    """
+    processing function performs each step of the car plate detection for both algorithm 1 and 2 by calling respective functions. The outcomes are stores in the resusults folder
+    :folder_name: the name of the folder where the pictures are stored
+    :image_name: the name of the picture that is to be processed
+    """
     new_image_name = image_name[:-4] # will be used for result pictures
     
     # Load image
@@ -179,7 +230,7 @@ def processing(folder_name, image_name):
         print("Algorithm 1 did not detect the car plate for " + new_image_name +".jpg")
 
     # Apply adaptive tresholding
-    img_adapt = adaptive_treshold(img_noiseReduce)
+    img_adapt = adaptive_threshold(img_noiseReduce)
 
     # Step 5: Algorithm 2 to detect
     try:
@@ -191,7 +242,6 @@ def processing(folder_name, image_name):
 if __name__ == "__main__":
     folder1 = "./set1"
     folder2 = "./set2"
-    folder3 = "./set3"
 
     # # Test cases for folder 1
     # for image in listdir(folder1):
@@ -201,37 +251,7 @@ if __name__ == "__main__":
     # for image in listdir(folder2):
     #     processing(folder2, image)
 
-    # # Test cases for folder 3
-    # for image in listdir(folder3):
-    #     processing(folder3, image)
 
-    processing("./set2", "014.jpg")
-
-    # Results:
-    # Both algos together for set 1: 23/45 51% accuracy
-    # Both algos together for set 2: 9/15 60% accuracy
-   
-    # Set 1 success: 001,002, 003, 004, 005, 007, 009, 015, 021, 022, 023, 026, 027, 030, 033, 034, 038, 039, 042 (Alex's algo) 40%
-    # Set 2 success: 002, 004, 005, 006, 009, 010, 012, 014 (Alex's algo) 53%
-    # Problem: does not detect properly when there is a big gap between numbers
-    # Problem 2: gets distracted by things outside of the car 025
-
-    # Set 1 success: 000, 002, 008, 015, 019, 029 my algo
-    # Set 2 success: 011, 014 my algo
-
-    # Improved Results:
-    # Both algos together for set 1: 25/45 56% accuracy
-    # Both algos together for set 2: 12/15 80% accuracy
-    
-    # Algo1:
-    # Set1 : 0,2,4,19,21,35 6/45
-    # Algo2:
-    # Set1 : 4,5,7,8,9,12,13,16,23,24,25,29,30,34,36,37,38,39,40,42  20/45
-
-    # Algo1:
-    # Set2 : 11,14  2/15
-    # Algo2:
-    # Set2 : 0,2,3,4,5,6,7,8,9,11,13,14 12/15
 
 
  
