@@ -66,12 +66,11 @@ def algorithm1(processed_img, orig_image, img_name):
 
     # Detecting the edges with Canny algorithm
     img_edged = cv2.Canny(thresh, 0, 200, 255) 
-
+        
     # Finding contours from the edged image
     cnts, _ = cv2.findContours(img_edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
     # Sorting the identified contours
-    cnts = sorted(cnts, key = cv2.contourArea, reverse = True) [:30] # sorting contours based on the min are of 30 and ignoring the ones below that
+    cnts = sorted(cnts, key = cv2.contourArea, reverse = True) [:30] # sorting contours based on the contour area
    
     # Finding contours with four sides
     i=0
@@ -203,8 +202,10 @@ if __name__ == "__main__":
     #     processing(folder2, image)
 
     # # Test cases for folder 3
-    for image in listdir(folder3):
-        processing(folder3, image)
+    # for image in listdir(folder3):
+    #     processing(folder3, image)
+
+    processing("./set2", "014.jpg")
 
     # Results:
     # Both algos together for set 1: 23/45 51% accuracy
