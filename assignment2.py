@@ -1,3 +1,4 @@
+from os import listdir
 import cv2
 import numpy as np
 from skimage.util import random_noise
@@ -243,9 +244,9 @@ if __name__ == "__main__":
     folder1 = "./set1"
     folder2 = "./set2"
 
-    # # Test cases for folder 1
-    # for image in listdir(folder1):
-    #     processing(folder1, image)
+    # Test cases for folder 1
+    for image in listdir(folder1):
+        processing(folder1, image)
 
     # # Test cases for folder 2
     # for image in listdir(folder2):
