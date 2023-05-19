@@ -245,8 +245,8 @@ if __name__ == "__main__":
     folder2 = "./set2"
 
     # Test cases for folder 1
-    for image in listdir(folder1):
-        processing(folder1, image)
+    # for image in listdir(folder1):
+    #     processing(folder1, image)
 
     # # Test cases for folder 2
     # for image in listdir(folder2):
