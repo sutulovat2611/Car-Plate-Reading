@@ -1,21 +1,28 @@
+import numpy as np
+import math
 
+OUTPUT_NEURONS = 20
+INPUT_NEURONS = 28 * 28
+HIDDEN_NEURONS = 16
 
 def Weight_Initialization():
     # Initializing of the Weights. Random float number between -0.5 to 0.5 for weights.
     np.random.seed(1)
-    wji= np.random.uniform(-0.5, 0.5, size=(Hidden_Neurons, Input_Neurons))
-    wkj = np.random.uniform(-0.5, 0.5, size=(Output_Neurons, Hidden_Neurons))
-    bias_j = np.random.uniform(0, 1, size=(Hidden_Neurons, 1))
-    bias_k = np.random.uniform(0, 1, size=(Output_Neurons, 1))
+    wji= np.random.uniform(-0.5, 0.5, size=(HIDDEN_NEURONS, INPUT_NEURONS))
+    wkj = np.random.uniform(-0.5, 0.5, size=(OUTPUT_NEURONS, HIDDEN_NEURONS))
+    bias_j = np.random.uniform(0, 1, size=(HIDDEN_NEURONS, 1))
+    bias_k = np.random.uniform(0, 1, size=(OUTPUT_NEURONS, 1))
 
 # def Read_Files():
 #     # Reading of Segmented Training Files, and Target Files.
 
 
-# def Forward_Input_Hidden():
-#     # Forward Propagation from Input -> Hidden Layer.
-#     # Obtain the results at each neuron in the hidden layer.
-#     # Calculate 𝑁𝑒𝑡𝑗and 𝑂𝑢𝑡𝑗
+def Forward_Input_Hidden(inputs,weights, biases):
+    # Forward Propagation from Input -> Hidden Layer.
+    # Obtain the results at each neuron in the hidden layer.
+    # Calculate 𝑁𝑒𝑡𝑗and 𝑂𝑢𝑡𝑗
+    Netj = np.dot(inputs,weights.T) 
+    Outj = 1/(1 + math.e**-(Netj + np.transpose(biases)))
 
 
 # def Check_for_End():
