@@ -24,10 +24,24 @@ def Forward_Input_Hidden(inputs,weights, biases):
     Netj = np.dot(inputs,weights.T) 
     Outj = 1/(1 + math.e**-(Netj + np.transpose(biases)))
 
+def Forward_Hidden_Output(inputs,weights, biases):
+#     # Forward Propagation from Hidden -> Output Layer.
+#     # Calculate 𝑁𝑒𝑡𝑘and 𝑂𝑢𝑡𝑘
+    Netk = np.dot(inputs,weights.T) 
+    Outk = 1/(1 + math.e**-(Netk + np.transpose(biases)))
 
-# def Check_for_End():
-#     # Check whether the total error is less than the error set by the user or the number of iterations is reached.
-#     # returns true or false
+
+def Check_for_End(user_set, outs, targets):
+    # Check whether the total error is less than the error set by the user or the number of iterations is reached.
+    # returns true or false
+    def Error_Correction(outs, targets):
+        result = ((outs - targets)**2)/2
+        return result
+    
+    if Error_Correction(outs, targets) < user_set:
+        return True
+    else:
+        return False
 
 
 # def Weight_Bias_Correction_Output():
