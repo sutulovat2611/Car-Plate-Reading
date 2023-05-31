@@ -5,7 +5,7 @@ import numpy as np
 
 
 # Read the image and convert to grayscale
-image = cv2.imread("./target/10.jpg")
+image = cv2.imread("./target/9.jpg")
 h, w, *_ = image.shape
 
 # Resizing images  
