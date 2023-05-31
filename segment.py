@@ -23,7 +23,7 @@ image = cv2.resize(image, dim, interpolation = cv2.INTER_AREA)
 # copying the image to use later
 result = image.copy()
 
-# Converting to 
+# Converting to grayscale
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
 # Apply Gaussian blurring and thresholding to reveal the characters on the license plate
@@ -39,7 +39,7 @@ for (i, label) in enumerate(np.unique(labels)):
     # If this is the background label, ignore it
     if label == 0:
         continue
-    # Otherwise, construct the label mask to display only connected component for the current label
+    # Otherwise, constrsuct the label mask to display only connected component for the current label
     labelMask = np.zeros(thresh.shape, dtype="uint8")
     labelMask[labels == label] = 255
     numPixels = cv2.countNonZero(labelMask)
