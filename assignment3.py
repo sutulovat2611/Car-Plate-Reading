@@ -2,6 +2,8 @@ from os import listdir
 import cv2
 import numpy as np
 import math
+from PIL import Image
+import os
 
 
 def Weight_Initialization(HIDDEN_NEURONS, INPUT_NEURONS, OUTPUT_NEURONS):
@@ -159,6 +161,39 @@ def resize(image):
     return image 
 
 
+def fix_size(folder_name, image_name):
+    # Initializing the desired dimensions
+    desired_w=27
+    desired_h=48
+    fill_color=(0, 0, 0, 255) # black color to fill empty space
+
+    # Specifying directory
+    directory_path = os.path.dirname(__file__)
+    file_path = os.path.join(directory_path, folder_name+'/'+image_name)
+
+    # Opening image
+    im = Image.open(file_path)
+
+    # Determining the size of the image
+    x, y = im.size
+    
+    # Getting the desired ratio
+    desired_ratio = desired_w / desired_h
+
+    # Resizing the image
+    w = max(desired_w, x)
+    h = int(w / desired_ratio)
+    if h < y:
+        h = y
+        w = int(h * desired_ratio)
+
+    # Filling the empty space with black color
+    new_im = Image.new('RGBA', (w, h), fill_color)
+    new_im.paste(im, ((w - x) // 2, (h - y) // 2))
+    new_im.resize((desired_w, desired_h))
+    new_im.show()
+    return new_im
+
 
 if __name__ == "__main__":
     # # Reading Image
@@ -167,7 +202,7 @@ if __name__ == "__main__":
     # image = resize(image)
 
     # # Input is the total number of pixels in an image
-    # INPUT_NEURONS = image.shape[1] * image.shape[0]
+    # INPUT_NEURONS = 27 * 48
     # # Set the number of hidden neurons
     # HIDDEN_NEURONS = 15
     # # Set the number of output neuron: total 20 different classes (0-9, U, V, W, B, F, L, M, P, Q, T)
@@ -185,6 +220,24 @@ if __name__ == "__main__":
 
     # image = cv2.imread("./character_image/M/001198.jpg")
 
+    testing = "./testing"
+    training = "./training"
+
+    testing_set = []
+    training_set = []
+
+    testing_set.append()
+    # Filling up the array with testing images
+    for image in os.listdir(testing):
+        testing_set.append(fix_size(testing, image))
+
+    # Filling up the array with training images
+    for image in os.listdir(training):
+        training_set.append(fix_size(training, image))
+    
+    # for image in os.listdir(training):
+    #     fix_size(training, image)
+    
     # Input is the total number of pixels in an image
     INPUT_NEURONS = 2
     # Set the number of hidden neurons
