@@ -69,7 +69,6 @@ def Forward_Hidden_Output(OutJ, wkj, bias_k):
         OutK_array.append(OutK)
     return OutK_array
 
-
 def Check_for_End(OutK_array, targets):
     # Check whether the total error is less than the error set by the user or the number of iterations is reached.
     # returns true or false
@@ -80,7 +79,6 @@ def Check_for_End(OutK_array, targets):
         errors_array.append(result)
         error_total +=result
     return error_total, errors_array
-
 
 def Weight_Bias_Correction_Output(OutK_array, targets, OutJ_array):
     # Correction of Weights and Bias between Hidden and Output Layer.
