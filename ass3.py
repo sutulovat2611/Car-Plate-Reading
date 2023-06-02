@@ -4,8 +4,6 @@ import cv2
 import numpy as np
 import random
 import math
-
-
 import functools
 
 
@@ -18,8 +16,6 @@ def Weight_Initialization():
     bias_k = np.random.uniform(0, 1, size=(OUTPUT_NEURONS))
     return  wji,wkj,bias_j,bias_k
 
-# def Read_Files():
-    # Reading of Segmented Training Files, and Target Files.
 
 def Forward_Input_Hidden(inputs,wji, bias_j):
     # Forward Propagation from Input -> Hidden Layer.
@@ -29,7 +25,7 @@ def Forward_Input_Hidden(inputs,wji, bias_j):
     Outj = 1/(1 + math.e**-(Netj + np.transpose(bias_j)))
     return Netj,Outj
 
-def Forward_Hidden_Output(Netj,wkj, bias_k):
+def Forward_Hidden_Output(Netj, wkj, bias_k):
     # Forward Propagation from Input -> Hidden Layer.
     # Obtain the results at each neuron in the hidden layer.
     # Calculate 𝑁𝑒𝑡kand 𝑂𝑢𝑡k
@@ -81,10 +77,11 @@ def Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii ):
     bjji = bias_j - n* dbjii
     return wkjj,bkkj,wjji,bjji
 
-# def Saving_Weights_Bias(wkjj,bkkj,wjji,bjji):
+def Saving_Weights_Bias(wkjj,bkkj,wjji,bjji):
     # Save 𝑤𝑘𝑘𝑗 and 𝑏𝑘𝑘𝑗
     # Save 𝑤𝑗𝑗𝑖 and 𝑏𝑗𝑗𝑖
-
+    wkj,bias_k,wji,bias_j = wkjj,bkkj,wjji,bjji
+    return wkj,bias_k,wji,bias_j
 
 
 
@@ -166,35 +163,98 @@ def auto_segmentation():
         counter+=1
 
 
-            
+def img_manipulation(target_fd,name):
 
+    image =cv2.imread(os.path.join(target_fd,name)) # reading image
+    resized = cv2.resize(image, (28,28)) # resizing image
+    img_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)  # convert picture to gray scale
+    _,img = cv2.threshold(img_gray,127,255,cv2.THRESH_BINARY) # applying thresholding
+       
+    # Representing the image in array form
+    x_flattend = img.reshape(1, 28*28)
+    x_flattend = np.squeeze(x_flattend)
+    x_flattend = x_flattend/255
 
+    # Z-score normalisation
+    mean = np.mean(x_flattend)
+    std = np.std(x_flattend)
+    x_normalized = (x_flattend - mean) / std
 
-
-
-
-
-
+    return x_normalized
 
 
 
 if __name__ == "__main__":
+    # Initializing values 
     OUTPUT_NEURONS = 20
-    INPUT_NEURONS = 28* 28
+    INPUT_NEURONS = 28* 28 # total number of pixels in an image
     HIDDEN_NEURONS = 100
-    ITTERATIONS = 300
-    ERROR = 0.001
-    i= 0 
+    ITTERATIONS = 300 # max number of iterations to be performed
+    ERROR = 0.001 # acceptable error rate
     j= 0
-
-
     alphabets_targets = {'B':10, 'F':11, 'L':12, 'M':13, 'P':14, 'Q':15, 'T':16, 'U':17, 'V':18, 'W':19}
+    accuracy = 0
+    total = 0
 
-    target_fd = "./character_image/train_case2"
+    ############################################################################################################
+    # TRAINING
+    ############################################################################################################
+    # Accessing train cases folder
+    target_fd = "./train_case"
     file_list = os.listdir(target_fd)
+
+    # Randomizing the dataset order
     random.seed(1)
     random.shuffle(file_list)
+
+    # Going through each case in the folder
     for name in file_list:
+        # Determining the target label
+        label = name[0] 
+        try:
+            label_value = int(label)
+        except ValueError:
+            label_value = alphabets_targets.get(label)
+            assert label_value is not None, "label_value is None"
+
+        # Showing the target in the array form
+        targets = [0]* 20
+        targets[label_value] = 1
+
+        # Image manipulation
+        inputs  = img_manipulation(target_fd,name)
+
+        # Starting training with Weights and Bias initialization
+        if(j == 0):
+            wji,wkj,bias_j,bias_k = Weight_Initialization()
+            j+=1
+        
+        # Performing training
+        for i in range(ITTERATIONS):
+            # Forward Propagation from Input -> Hidden Layer.
+            netj,outj = Forward_Input_Hidden(inputs, wji, bias_j)
+            # Forward Propagation from Hidden -> Output Layer.
+            netk,outk = Forward_Hidden_Output(outj, wkj, bias_k)
+            # Checking for error value
+            if(Check_for_End(outk, targets, ERROR)):
+                break
+            else:
+                dwkkj,dbkkj = Weight_Bias_Correction_Output(outk,targets, outj)
+                dwjji, dbjii = Weight_Bias_Correction_Hidden(outj,outk,inputs,targets,wkj)
+                wkj,bias_k,wji,bias_j = Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii)
+    
+    # Saving weights & bias
+    Saving_Weights_Bias(wkj,bias_k,wji,bias_j)
+
+    ############################################################################################################
+    # TESTING WITH MANUALLY CROPPED IMAGES
+    ############################################################################################################
+    # Accessing test cases folder
+    target_fd = "./test_case"
+    for name in listdir(target_fd):
+        total+=1 # Counting the total number of images
+
+        # Determining the target label
         label = name[0]
         try:
             label_value = int(label)
@@ -202,88 +262,34 @@ if __name__ == "__main__":
             label_value = alphabets_targets.get(label)
             assert label_value is not None, "label_value is None"
 
-        targets = [0]* 20
-        targets[label_value] = 1
+        # Image manipulation
+        inputs  = img_manipulation(target_fd,name)
 
+        # Performing testing
+        netj,outj = Forward_Input_Hidden(inputs, wji, bias_j)
+        netk,outk = Forward_Hidden_Output(outj, wkj, bias_k)
 
-        image =cv2.imread(os.path.join(target_fd,name))
-        resized = cv2.resize(image, (28,28))
-        # convert picture to gray scale
-        img_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-        _,img = cv2.threshold(img_gray,127,255,cv2.THRESH_BINARY)
-        x_flattend = img.reshape(1, 28*28)
-        x_flattend = np.squeeze(x_flattend)
-        x_flattend = x_flattend/255
+        # Determinig how many values are classified right
+        if np.argmax(outk) == label_value :
+            accuracy +=1
 
-        mean = np.mean(x_flattend)
-        std = np.std(x_flattend)
-        x_normalized = (x_flattend - mean) / std
+    print("Accuracy for testing with manually cropped images: " + str(accuracy/total))
 
-        inputs  = x_normalized
+    ############################################################################################################
+    # TESTING WITH AUTO-SEGMENTED IMAGES OF MALAYSIAN CAR PLATE
+    ############################################################################################################
 
-        # inputs  = x_flattend
-        
-        if(j == 0):
-            wji,wkj,bias_j,bias_k = Weight_Initialization()
-            j+=1
-            
-        for i in range(ITTERATIONS):
-            netj,outj = Forward_Input_Hidden(inputs, wji, bias_j)
-            netk,outk = Forward_Hidden_Output(outj, wkj, bias_k)
-            if(Check_for_End(outk, targets, ERROR)):
-                break
-            else:
-                dwkkj,dbkkj = Weight_Bias_Correction_Output(outk,targets, outj)
-                dwjji, dbjii = Weight_Bias_Correction_Hidden(outj,outk,inputs,targets,wkj)
-                wkj,bias_k,wji,bias_j = Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii)
-
+    total = 0
     accuracy = 0
+    # Performing auto segmentation
+    auto_segmentation()
 
-    #test
-    # target_fd = "./character_image/test_case"
-    # for name in listdir(target_fd):
-    #     label = name[0]
-    #     try:
-    #         label_value = int(label)
-    #     except ValueError:
-    #         label_value = alphabets_targets.get(label)
-    #         assert label_value is not None, "label_value is None"
-
-
-    #     image =cv2.imread(os.path.join(target_fd,name))
-    #     resized = cv2.resize(image, (28,28))
-    #     # convert picture to gray scale
-    #     img_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-    #     _,img = cv2.threshold(img_gray,127,255,cv2.THRESH_BINARY)
-    #     x_flattend = img.reshape(1, 28*28)
-
-    #     x_flattend = np.squeeze(x_flattend)
-    #     x_flattend = x_flattend/255
-
-    #     mean = np.mean(x_flattend)
-    #     std = np.std(x_flattend)
-    #     x_normalized = (x_flattend - mean) / std
-
-    #     inputs  = x_normalized
-
-    #     # inputs  = x_flattend
-    #     netj,outj = Forward_Input_Hidden(inputs, wji, bias_j)
-    #     netk,outk = Forward_Hidden_Output(outj, wkj, bias_k)
-    #     # print(np.argmax(outk))
-    #     # print(outk)
-    #     if np.argmax(outk) == label_value :
-    #         accuracy +=1
-
-    # print("accuracy")
-    # print(accuracy)
-
-
-
-    # Working with segmentation
-    # auto_segmentation()
-
+    # Accessing the folder with segmentation results
     target_fd = "./results"
+    
+    # Determining the target label
     for name in listdir(target_fd):
+        total+=1 # Counting the total number of images
         label = name[4]
         try:
             label_value = int(label)
@@ -291,34 +297,17 @@ if __name__ == "__main__":
             label_value = alphabets_targets.get(label)
             assert label_value is not None, "label_value is None"
 
+        # Image manipulation
+        inputs  = img_manipulation(target_fd,name)
 
-        image =cv2.imread(os.path.join(target_fd,name))
-        resized = cv2.resize(image, (28,28))
-        # convert picture to gray scale
-        img_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-        _,img = cv2.threshold(img_gray,127,255,cv2.THRESH_BINARY)
-        x_flattend = img.reshape(1, 28*28)
-
-        x_flattend = np.squeeze(x_flattend)
-        x_flattend = x_flattend/255
-
-        mean = np.mean(x_flattend)
-        std = np.std(x_flattend)
-        x_normalized = (x_flattend - mean) / std
-
-        inputs  = x_normalized
-
-        # inputs  = x_flattend
+        # Performing testing
         netj,outj = Forward_Input_Hidden(inputs, wji, bias_j)
         netk,outk = Forward_Hidden_Output(outj, wkj, bias_k)
-        # print(np.argmax(outk))
-        # print(outk)
+        
         if np.argmax(outk) == label_value :
             accuracy +=1
-
-    print("accuracy")
-    print(accuracy)
-
+        
+    print("Accuracy for testing with auto-segmented images: " + str(accuracy/total))
 
 
 
