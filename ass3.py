@@ -57,8 +57,8 @@ def Check_for_End(Outk, targets, user_set):
     # Check whether the total error is less than the error set by the user or the number of iterations is reached.
     # returns true or false
     def Error_Correction(outs, targets):
-        total_error= np.sum(((outs - targets)**2)/OUTPUT_NEURONS)
-        # print(total_error)
+        total_error= np.sum(((outs - targets)**2))/OUTPUT_NEURONS
+        print(((outs - targets)**2))
         return total_error
     
     if Error_Correction(Outk, targets)< user_set:
@@ -134,11 +134,12 @@ def Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii ):
 # # Error_Correction(outk, target)
 
 
+
 OUTPUT_NEURONS =4
 INPUT_NEURONS = 28* 28
 HIDDEN_NEURONS = 16
 ITTERATIONS = 50
-ERROR = 0.05
+ERROR = 0.005
 i= 0 
 j= 0
 
@@ -163,8 +164,8 @@ for name in listdir(target_fd):
     resized = cv2.resize(image, (28,28))
     # convert picture to gray scale
     img_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-    # _,img = cv2.threshold(img_gray,127,255,cv2.THRESH_BINARY)
-    x_flattend = img_gray.reshape(1, 28*28)
+    _,img = cv2.threshold(img_gray,127,255,cv2.THRESH_BINARY)
+    x_flattend = img.reshape(1, 28*28)
     # plt.matshow(img_gray)
     x_flattend = np.squeeze(x_flattend)
     x_flattend = x_flattend/255
@@ -176,7 +177,15 @@ for name in listdir(target_fd):
     for i in range(ITTERATIONS):
         netj,outj = Forward_Input_Hidden(inputs, wji, bias_j)
         netk,outk = Forward_Hidden_Output(outj, wkj, bias_k)
-        if(Check_for_End(outk, targets1, ERROR)):     
+        if(Check_for_End(outk, targets1, ERROR)):
+            print("x")
+            # print(name)
+            print(np.argmax(outk))
+            print(outk)
+            wjji = wji
+            wkjj = wkj
+            bjji=bias_j
+            bkkj =bias_k     
             break
         else:
             dwkkj,dbkkj = Weight_Bias_Correction_Output(outk,targets1, outj)
@@ -207,4 +216,4 @@ for name in listdir(target_fd):
     print(outk)
 
 #result not good zz 
-
+#a
