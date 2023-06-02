@@ -87,7 +87,7 @@ def Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii ):
     # Saving_Weights_Bias() implemented inside
     # Update Weights and Bias.
     # Calculate 𝑤𝑘𝑘𝑗+ and 𝑏𝑘𝑘𝑗+
-    n = 0.5
+    n = 0.02
     wkjj = wkj - n*dwkkj
     bkkj = bias_k - n*dbkkj
     # print("wk+")
@@ -133,40 +133,39 @@ def Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii ):
 
 import random
 
-OUTPUT_NEURONS =6
+OUTPUT_NEURONS = 20
 INPUT_NEURONS = 28* 28
-HIDDEN_NEURONS = 16
-ITTERATIONS = 200
-ERROR = 0.005
+HIDDEN_NEURONS = 300
+ITTERATIONS = 300
+ERROR = 0.001
 i= 0 
 j= 0
 
 
+alphabets_targets = {'B':10, 'F':11, 'L':12, 'M':13, 'P':14, 'Q':15, 'T':16, 'U':17, 'V':18, 'W':19}
 
 target_fd = "./Car-Plate-Reading/character_image/train_case2"
 file_list = os.listdir(target_fd)
 random.seed(1)
 random.shuffle(file_list)
 for name in file_list:
-    if name.startswith("0") :
-        # Read the image file using OpenCV
-        targets1 = [1,0,0,0,0,0]
-    elif name.startswith('1') :
-        targets1 = [0,1,0,0,0,0]
-    elif name.startswith('2') :
-        targets1 = [0,0,1,0,0,0]
-    elif name.startswith("3"):
-        targets1 = [0,0,0,1,0,0]
-    elif name.startswith("4"):
-        targets1 = [0,0,0,0,1,0]
-    elif name.startswith("5"):
-        targets1 = [0,0,0,0,0,1]
+    label = name[0]
+    try:
+        label_value = int(label)
+    except ValueError:
+        label_value = alphabets_targets.get(label)
+        assert label_value is not None, "label_value is None"
+
+    targets = [0]* 20
+    targets[label_value] = 1
+
+
     image =cv2.imread(os.path.join(target_fd,name))
     resized = cv2.resize(image, (28,28))
     # convert picture to gray scale
     img_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-    # _,img = cv2.threshold(img_gray,127,255,cv2.THRESH_BINARY)
-    x_flattend = img_gray.reshape(1, 28*28)
+    _,img = cv2.threshold(img_gray,127,255,cv2.THRESH_BINARY)
+    x_flattend = img.reshape(1, 28*28)
     # plt.matshow(img_gray)
     x_flattend = np.squeeze(x_flattend)
     x_flattend = x_flattend/255
@@ -179,22 +178,30 @@ for name in file_list:
     for i in range(ITTERATIONS):
         netj,outj = Forward_Input_Hidden(inputs, wji, bias_j)
         netk,outk = Forward_Hidden_Output(outj, wkj, bias_k)
-        if(Check_for_End(outk, targets1, ERROR)):
+        if(Check_for_End(outk, targets, ERROR)):
             print("x")
-            # print(name)
+            # # print(name)
             print(np.argmax(outk))
-            print(outk)
+            # print(outk)
             break
         else:
-            dwkkj,dbkkj = Weight_Bias_Correction_Output(outk,targets1, outj)
-            dwjji, dbjii = Weight_Bias_Correction_Hidden(outj,outk,inputs,targets1,wkj)
+            dwkkj,dbkkj = Weight_Bias_Correction_Output(outk,targets, outj)
+            dwjji, dbjii = Weight_Bias_Correction_Hidden(outj,outk,inputs,targets,wkj)
             wkj,bias_k,wji,bias_j = Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii)
 
-
-        
+accuracy = 0
+print("result")      
 #test
 target_fd = "./Car-Plate-Reading/character_image/test_case"
 for name in listdir(target_fd):
+    label = name[0]
+    try:
+        label_value = int(label)
+    except ValueError:
+        label_value = alphabets_targets.get(label)
+        assert label_value is not None, "label_value is None"
+
+
     image =cv2.imread(os.path.join(target_fd,name))
     resized = cv2.resize(image, (28,28))
     # convert picture to gray scale
@@ -209,6 +216,10 @@ for name in listdir(target_fd):
     netk,outk = Forward_Hidden_Output(outj, wkj, bias_k)
     print(np.argmax(outk))
     # print(outk)
+    if np.argmax(outk) == label_value :
+        accuracy +=1
 
-# #result not good zz 
-# #a
+print("accuracy")
+print(accuracy)
+
+
