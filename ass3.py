@@ -69,7 +69,7 @@ def Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii ):
     # Saving_Weights_Bias() implemented inside
     # Update Weights and Bias.
     # Calculate 𝑤𝑘𝑘𝑗+ and 𝑏𝑘𝑘𝑗+
-    n = 0.02
+    n = 0.1
     wkjj = wkj - n*dwkkj
     bkkj = bias_k - n*dbkkj
 
@@ -85,102 +85,101 @@ def Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii ):
 
 if __name__ == "__main__":
     OUTPUT_NEURONS = 20
-    INPUT_NEURONS = 28 * 28
-    HIDDEN_NEURONS = 250
-
-# dwjji, dbjii = Weight_Bias_Correction_Hidden(outj,outk,inputs,target,wkj)
-
-# Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii)
-
-# Error_Correction(outk, target)
-
-import random
-
-OUTPUT_NEURONS = 20
-INPUT_NEURONS = 28* 28
-HIDDEN_NEURONS = 300
-ITTERATIONS = 300
-ERROR = 0.001
-i= 0 
-j= 0
+    INPUT_NEURONS = 28* 28
+    HIDDEN_NEURONS = 100
+    ITTERATIONS = 300
+    ERROR = 0.001
+    i= 0 
+    j= 0
 
 
-alphabets_targets = {'B':10, 'F':11, 'L':12, 'M':13, 'P':14, 'Q':15, 'T':16, 'U':17, 'V':18, 'W':19}
+    alphabets_targets = {'B':10, 'F':11, 'L':12, 'M':13, 'P':14, 'Q':15, 'T':16, 'U':17, 'V':18, 'W':19}
 
-target_fd = "./character_image/train_case2"
-file_list = os.listdir(target_fd)
-random.seed(1)
-random.shuffle(file_list)
-for name in file_list:
-    label = name[0]
-    try:
-        label_value = int(label)
-    except ValueError:
-        label_value = alphabets_targets.get(label)
-        assert label_value is not None, "label_value is None"
+    target_fd = "./character_image/train_case2"
+    file_list = os.listdir(target_fd)
+    random.seed(1)
+    random.shuffle(file_list)
+    for name in file_list:
+        label = name[0]
+        try:
+            label_value = int(label)
+        except ValueError:
+            label_value = alphabets_targets.get(label)
+            assert label_value is not None, "label_value is None"
 
-    targets = [0]* 20
-    targets[label_value] = 1
+        targets = [0]* 20
+        targets[label_value] = 1
 
 
-    image =cv2.imread(os.path.join(target_fd,name))
-    resized = cv2.resize(image, (28,28))
-    # convert picture to gray scale
-    img_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-    _,img = cv2.threshold(img_gray,127,255,cv2.THRESH_BINARY)
-    x_flattend = img.reshape(1, 28*28)
-    # plt.matshow(img_gray)
-    x_flattend = np.squeeze(x_flattend)
-    x_flattend = x_flattend/255
-    inputs  = x_flattend
-    
-    if(j == 0):
-        wji,wkj,bias_j,bias_k = Weight_Initialization()
-        j+=1
+        image =cv2.imread(os.path.join(target_fd,name))
+        resized = cv2.resize(image, (28,28))
+        # convert picture to gray scale
+        img_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+        _,img = cv2.threshold(img_gray,127,255,cv2.THRESH_BINARY)
+        x_flattend = img.reshape(1, 28*28)
+        x_flattend = np.squeeze(x_flattend)
+        x_flattend = x_flattend/255
+
+        mean = np.mean(x_flattend)
+        std = np.std(x_flattend)
+        x_normalized = (x_flattend - mean) / std
+
+        inputs  = x_normalized
+
+        # inputs  = x_flattend
         
-    for i in range(ITTERATIONS):
+        if(j == 0):
+            wji,wkj,bias_j,bias_k = Weight_Initialization()
+            j+=1
+            
+        for i in range(ITTERATIONS):
+            netj,outj = Forward_Input_Hidden(inputs, wji, bias_j)
+            netk,outk = Forward_Hidden_Output(outj, wkj, bias_k)
+            if(Check_for_End(outk, targets, ERROR)):
+                break
+            else:
+                dwkkj,dbkkj = Weight_Bias_Correction_Output(outk,targets, outj)
+                dwjji, dbjii = Weight_Bias_Correction_Hidden(outj,outk,inputs,targets,wkj)
+                wkj,bias_k,wji,bias_j = Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii)
+
+    accuracy = 0
+
+    #test
+    target_fd = "./character_image/test_case"
+    for name in listdir(target_fd):
+        label = name[0]
+        try:
+            label_value = int(label)
+        except ValueError:
+            label_value = alphabets_targets.get(label)
+            assert label_value is not None, "label_value is None"
+
+
+        image =cv2.imread(os.path.join(target_fd,name))
+        resized = cv2.resize(image, (28,28))
+        # convert picture to gray scale
+        img_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+        _,img = cv2.threshold(img_gray,127,255,cv2.THRESH_BINARY)
+        x_flattend = img.reshape(1, 28*28)
+
+        x_flattend = np.squeeze(x_flattend)
+        x_flattend = x_flattend/255
+
+        mean = np.mean(x_flattend)
+        std = np.std(x_flattend)
+        x_normalized = (x_flattend - mean) / std
+
+        inputs  = x_normalized
+
+        # inputs  = x_flattend
         netj,outj = Forward_Input_Hidden(inputs, wji, bias_j)
         netk,outk = Forward_Hidden_Output(outj, wkj, bias_k)
-        if(Check_for_End(outk, targets, ERROR)):
-            print("x")
-            print(np.argmax(outk))
-            break
-        else:
-            dwkkj,dbkkj = Weight_Bias_Correction_Output(outk,targets, outj)
-            dwjji, dbjii = Weight_Bias_Correction_Hidden(outj,outk,inputs,targets,wkj)
-            wkj,bias_k,wji,bias_j = Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii)
+        # print(np.argmax(outk))
+        # print(outk)
+        if np.argmax(outk) == label_value :
+            accuracy +=1
 
-accuracy = 0
-print("result")      
-#test
-target_fd = "./character_image/test_case"
-for name in listdir(target_fd):
-    label = name[0]
-    try:
-        label_value = int(label)
-    except ValueError:
-        label_value = alphabets_targets.get(label)
-        assert label_value is not None, "label_value is None"
-
-
-    image =cv2.imread(os.path.join(target_fd,name))
-    resized = cv2.resize(image, (28,28))
-    # convert picture to gray scale
-    img_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-    _,img = cv2.threshold(img_gray,127,255,cv2.THRESH_BINARY)
-    x_flattend = img.reshape(1, 28*28)
-
-    x_flattend = np.squeeze(x_flattend)
-    x_flattend = x_flattend/255
-    inputs  = x_flattend
-    netj,outj = Forward_Input_Hidden(inputs, wji, bias_j)
-    netk,outk = Forward_Hidden_Output(outj, wkj, bias_k)
-    print(np.argmax(outk))
-    # print(outk)
-    if np.argmax(outk) == label_value :
-        accuracy +=1
-
-print("accuracy")
-print(accuracy)
+    print("accuracy")
+    print(accuracy)
 
 
