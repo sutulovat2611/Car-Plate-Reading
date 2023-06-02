@@ -107,7 +107,7 @@ j= 0
 
 alphabets_targets = {'B':10, 'F':11, 'L':12, 'M':13, 'P':14, 'Q':15, 'T':16, 'U':17, 'V':18, 'W':19}
 
-target_fd = "./Car-Plate-Reading/character_image/train_case2"
+target_fd = "./character_image/train_case2"
 file_list = os.listdir(target_fd)
 random.seed(1)
 random.shuffle(file_list)
@@ -143,9 +143,7 @@ for name in file_list:
         netk,outk = Forward_Hidden_Output(outj, wkj, bias_k)
         if(Check_for_End(outk, targets, ERROR)):
             print("x")
-            # # print(name)
             print(np.argmax(outk))
-            # print(outk)
             break
         else:
             dwkkj,dbkkj = Weight_Bias_Correction_Output(outk,targets, outj)
@@ -155,7 +153,7 @@ for name in file_list:
 accuracy = 0
 print("result")      
 #test
-target_fd = "./Car-Plate-Reading/character_image/test_case"
+target_fd = "./character_image/test_case"
 for name in listdir(target_fd):
     label = name[0]
     try:
