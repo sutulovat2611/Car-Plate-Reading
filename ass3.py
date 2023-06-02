@@ -87,87 +87,94 @@ def Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii ):
 if __name__ == "__main__":
     OUTPUT_NEURONS = 20
     INPUT_NEURONS = 28 * 28
-    HIDDEN_NEURONS = 450
+    HIDDEN_NEURONS = 100
 
     ITERATIONS = 200
     ERROR = 0.001
-    j= 0
+    j = 0
 
-    # Performing training
+    # PERFORMING TRAINING
     target_fd = "./training"
     file_list = os.listdir(target_fd)
+    
     random.seed(1)
     random.shuffle(file_list)
+    
     for name in file_list:
+        # Determining the target value
         if name.startswith("0") :
-            targets1 = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+            targets = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
         elif name.startswith('1') :
-            targets1 = [0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+            targets = [0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
         elif name.startswith('2') :
-            targets1 = [0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+            targets = [0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
         elif name.startswith("3"):
-            targets1 = [0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+            targets = [0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
         elif name.startswith("4"):
-            targets1 = [0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+            targets = [0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
         elif name.startswith("5"):
-            targets1 = [0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+            targets = [0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
         elif name.startswith("6"):
-            targets1 = [0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0]
+            targets = [0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0]
         elif name.startswith("7"):
-            targets1 = [0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0]
+            targets = [0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0]
         elif name.startswith("8"):
-            targets1 = [0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0]
+            targets = [0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0]
         elif name.startswith("9"):
-            targets1 = [0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0]
+            targets = [0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0]
         elif name.startswith("B"):
-            targets1 = [0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0]
+            targets = [0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0]
         elif name.startswith("F"):
-            targets1 = [0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0]
+            targets = [0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0]
         elif name.startswith("L"):
-            targets1 = [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0]
+            targets = [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0]
         elif name.startswith("M"):
-            targets1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0]
+            targets = [0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0]
         elif name.startswith("P"):
-            targets1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0]
+            targets = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0]
         elif name.startswith("Q"):
-            targets1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0]
+            targets = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0]
         elif name.startswith("Q"):
-            targets1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]
+            targets = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]
         elif name.startswith("U"):
-            targets1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0]
+            targets = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0]
         elif name.startswith("V"):
-            targets1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0]
+            targets = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0]
         elif name.startswith("W"):
-            targets1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]
+            targets = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]
+        
+        # Reading the image and performing manipulations to normalise it
         image =cv2.imread(os.path.join(target_fd,name))
-        resized = cv2.resize(image, (28,28))
-        # convert picture to gray scale
-        img_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-        _,img = cv2.threshold(img_gray,127,255,cv2.THRESH_BINARY)
-        x_flattend = img.reshape(1, 28*28)
+        resized = cv2.resize(image, (28,28)) # resizing
+        img_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY) # converting to gray scale
+        _,img = cv2.threshold(img_gray,127,255,cv2.THRESH_BINARY) # performing thresholding
+        x_flattend = img.reshape(1, 28*28) # making proper format
         x_flattend = np.squeeze(x_flattend)
         x_flattend = x_flattend/255
         inputs  = x_flattend
-        
+
+        # Initializing weights in the beginning only
         if(j == 0):
             wji,wkj,bias_j,bias_k = Weight_Initialization()
-            j+=1
-            
+            j = 1
+
+        # Performing training
         for i in range(ITERATIONS):
             netj,outj = Forward_Input_Hidden(inputs, wji, bias_j)
             netk,outk = Forward_Hidden_Output(outj, wkj, bias_k)
-            if(Check_for_End(outk, targets1, ERROR)):
+            if(Check_for_End(outk, targets, ERROR)):
                 break
             else:
-                dwkkj,dbkkj = Weight_Bias_Correction_Output(outk,targets1, outj)
-                dwjji, dbjii = Weight_Bias_Correction_Hidden(outj,outk,inputs,targets1,wkj)
-                wkj,bias_k,wji,bias_j = Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii)
+                dwkkj,dbkkj = Weight_Bias_Correction_Output(outk,targets, outj)
+                dwjji, dbjii = Weight_Bias_Correction_Hidden(outj,outk,inputs,targets,wkj)
+                wkj, bias_k, wji, bias_j = Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii)
 
 
+    # PERFORMING TESTING
     classif = []
-    #test
     target_fd = "./testing"
     for name in listdir(target_fd):
+        # Determining the expected value
         if name.startswith("0") :
             expected = 0
         elif name.startswith('1') :
@@ -209,29 +216,30 @@ if __name__ == "__main__":
         elif name.startswith("W"):
             expected = 19
 
+        # Reading the image and performing manipulations to normalize it
         image =cv2.imread(os.path.join(target_fd,name))
-        resized = cv2.resize(image, (28,28))
-        # convert picture to gray scale
-        img_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-        _,img = cv2.threshold(img_gray,127,255,cv2.THRESH_BINARY)
-        x_flattend = img.reshape(1, 28*28)
-
+        resized = cv2.resize(image, (28,28)) # resizing
+        img_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY) # convert picture to gray scale
+        _,img = cv2.threshold(img_gray,127,255,cv2.THRESH_BINARY) # performing thresholding
+        x_flattend = img.reshape(1, 28*28) # making proper format
         x_flattend = np.squeeze(x_flattend)
         x_flattend = x_flattend/255
         inputs  = x_flattend
+
         netj,outj = Forward_Input_Hidden(inputs, wji, bias_j)
         netk,outk = Forward_Hidden_Output(outj, wkj, bias_k)
-        # print(np.argmax(outk))
         
+        # If the value is classified right appending 1, otherwise 0
         if (np.argmax(outk) == expected):
             classif.append(1)
         else:
             classif.append(0)
-
+    
+    # Determining classification accuracy
     sum =0
     for x in classif:
         if x:
             sum+=1
 
     accuracy = sum/len(classif)
-    print(accuracy)
+    print("Classification accuracy is " + accuracy)
