@@ -33,14 +33,14 @@ def Forward_Hidden_Output(Netj, wkj, bias_k):
     Outk = 1/(1 + math.e**-(Netk + np.transpose(bias_k)))
     return Netk, Outk
 
-def Check_for_End(Outk, targets, user_set):
+def Check_for_End(Outk, targets, user_set, i):
     # Check whether the total error is less than the error set by the user or the number of iterations is reached.
     # returns true or false
     def Error_Correction(outs, targets):
         total_error= np.sum(((outs - targets)**2))/OUTPUT_NEURONS
         return total_error
     
-    if Error_Correction(Outk, targets)< user_set:
+    if Error_Correction(Outk, targets)< user_set or i > ITTERATIONS:
         return True
     else: 
         return False
@@ -68,19 +68,19 @@ def Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii ):
     # Saving_Weights_Bias() implemented inside
     # Update Weights and Bias.
     # Calculate 𝑤𝑘𝑘𝑗+ and 𝑏𝑘𝑘𝑗+
-    n = 0.1
-    wkjj = wkj - n*dwkkj
-    bkkj = bias_k - n*dbkkj
+    
+    wkkj = wkj - N*dwkkj
+    bkkj = bias_k - N*dbkkj
 
     # Calculate 𝑤𝑗𝑗𝑖+ and 𝑏𝑗𝑗𝑖+
-    wjji = wji - n *dwjji
-    bjji = bias_j - n* dbjii
-    return wkjj,bkkj,wjji,bjji
+    wjji = wji - N *dwjji
+    bjji = bias_j - N* dbjii
+    return wkkj,bkkj,wjji,bjji
 
-def Saving_Weights_Bias(wkjj,bkkj,wjji,bjji):
+def Saving_Weights_Bias(wkkj,bkkj,wjji,bjji):
     # Save 𝑤𝑘𝑘𝑗 and 𝑏𝑘𝑘𝑗
     # Save 𝑤𝑗𝑗𝑖 and 𝑏𝑗𝑗𝑖
-    wkj,bias_k,wji,bias_j = wkjj,bkkj,wjji,bjji
+    wkj,bias_k,wji,bias_j = wkkj,bkkj,wjji,bjji
     return wkj,bias_k,wji,bias_j
 
 
@@ -191,11 +191,12 @@ if __name__ == "__main__":
     HIDDEN_NEURONS = 100
     ITTERATIONS = 300 # max number of iterations to be performed
     ERROR = 0.001 # acceptable error rate
+    N = 0.1
     j= 0
     alphabets_targets = {'B':10, 'F':11, 'L':12, 'M':13, 'P':14, 'Q':15, 'T':16, 'U':17, 'V':18, 'W':19}
     accuracy = 0
     total = 0
-
+    wkkj,bkkj,wjji,bjji = 0,0,0,0
     ############################################################################################################
     # TRAINING
     ############################################################################################################
@@ -228,21 +229,21 @@ if __name__ == "__main__":
         if(j == 0):
             wji,wkj,bias_j,bias_k = Weight_Initialization()
             j+=1
-        
+        i=0
         # Performing training
-        for i in range(ITTERATIONS):
+        while i < ITTERATIONS:
             # Forward Propagation from Input -> Hidden Layer.
             netj,outj = Forward_Input_Hidden(inputs, wji, bias_j)
             # Forward Propagation from Hidden -> Output Layer.
             netk,outk = Forward_Hidden_Output(outj, wkj, bias_k)
             # Checking for error value
-            if(Check_for_End(outk, targets, ERROR)):
+            if(Check_for_End(outk, targets, ERROR, i)):
                 break
             else:
                 dwkkj,dbkkj = Weight_Bias_Correction_Output(outk,targets, outj)
                 dwjji, dbjii = Weight_Bias_Correction_Hidden(outj,outk,inputs,targets,wkj)
                 wkj,bias_k,wji,bias_j = Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii)
-    
+            i+=1
     # Saving weights & bias
     Saving_Weights_Bias(wkj,bias_k,wji,bias_j)
 
