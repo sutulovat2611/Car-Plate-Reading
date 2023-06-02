@@ -124,15 +124,13 @@ def auto_segmentation():
         mask = np.zeros(thresh.shape, dtype="uint8")
 
         # Loop over the unique components
-        for (i, label) in enumerate(np.unique(labels)):
+        for (_, label) in enumerate(np.unique(labels)):
             # If this is the background label, ignore it
             if label == 0:
                 continue
             # Otherwise, constrsuct the label mask to display only connected component for the current label
             labelMask = np.zeros(thresh.shape, dtype="uint8")
-            labelMask[labels == label] = 255
-            numPixels = cv2.countNonZero(labelMask)
-        
+            labelMask[labels == label] = 255        
             # Add to our mask
             mask = cv2.add(mask, labelMask)
 
@@ -242,7 +240,12 @@ if __name__ == "__main__":
                 dwkkj,dbkkj = Weight_Bias_Correction_Output(outk,targets, outj)
                 dwjji, dbjii = Weight_Bias_Correction_Hidden(outj,outk,inputs,targets,wkj)
                 wkj,bias_k,wji,bias_j = Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii)
-    
+        
+        # Finding the training data that does not met the criteria
+        if (np.max(outk)<0.9):
+            print(name)
+            print(np.max(outk))
+
     # Saving weights & bias
     Saving_Weights_Bias(wkj,bias_k,wji,bias_j)
 
@@ -306,7 +309,7 @@ if __name__ == "__main__":
         
         if np.argmax(outk) == label_value :
             accuracy +=1
-        
+    print(accuracy)
     print("Accuracy for testing with auto-segmented images: " + str(accuracy/total))
 
 
