@@ -58,7 +58,7 @@ def Check_for_End(Outk, targets, user_set):
     # returns true or false
     def Error_Correction(outs, targets):
         total_error= np.sum(((outs - targets)**2))/OUTPUT_NEURONS
-        # print(((outs - targets)**2))
+        print(((outs - targets)**2))
         return total_error
     
     if Error_Correction(Outk, targets)< user_set:
