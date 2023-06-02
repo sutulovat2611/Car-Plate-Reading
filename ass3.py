@@ -2,18 +2,9 @@ from os import listdir
 import os
 import cv2
 import numpy as np
-from skimage.util import random_noise
-from imutils import grab_contours
-
-import matplotlib.pyplot as plt
-
-import numpy as np
+import random
 import math
 
-
-# OUTPUT_NEURONS = 20
-# INPUT_NEURONS = 28* 28
-# HIDDEN_NEURONS = 16
 
 def Weight_Initialization():
     # Initializing of the Weights. Random float number between -0.5 to 0.5 for weights.
@@ -25,18 +16,14 @@ def Weight_Initialization():
     return  wji,wkj,bias_j,bias_k
 
 # def Read_Files():
-#     # Reading of Segmented Training Files, and Target Files.
+    # Reading of Segmented Training Files, and Target Files.
+
 def Forward_Input_Hidden(inputs,wji, bias_j):
     # Forward Propagation from Input -> Hidden Layer.
     # Obtain the results at each neuron in the hidden layer.
     # Calculate 𝑁𝑒𝑡𝑗and 𝑂𝑢𝑡𝑗
-    
     Netj = np.dot(inputs,wji.T) 
-    # print("Netj :")
-    # print(Netj)
     Outj = 1/(1 + math.e**-(Netj + np.transpose(bias_j)))
-    # print("Outj :")
-    # print(Outj)
     return Netj,Outj
 
 def Forward_Hidden_Output(Netj,wkj, bias_k):
@@ -44,11 +31,7 @@ def Forward_Hidden_Output(Netj,wkj, bias_k):
     # Obtain the results at each neuron in the hidden layer.
     # Calculate 𝑁𝑒𝑡kand 𝑂𝑢𝑡k
     Netk = np.dot(Netj,wkj.T) 
-    # print("Netk :")
-    # print(Netk)
     Outk = 1/(1 + math.e**-(Netk + np.transpose(bias_k)))
-    # print("Outk :")
-    # print(Outk)
     return Netk, Outk
 
 def Check_for_End(Outk, targets, user_set):
@@ -56,7 +39,6 @@ def Check_for_End(Outk, targets, user_set):
     # returns true or false
     def Error_Correction(outs, targets):
         total_error= np.sum(((outs - targets)**2))/OUTPUT_NEURONS
-        # print(total_error)
         return total_error
     
     if Error_Correction(Outk, targets)< user_set:
@@ -73,16 +55,16 @@ def Weight_Bias_Correction_Output(Outk, targets, Outj):
         dwkkj = np.vstack([dwkkj,temp])
     dbkkj = (Outk - targets) * Outk*(1 - Outk) 
     dwkkj = dwkkj.T
-    # print(dwkkj)
     return dwkkj,dbkkj
+
 def Weight_Bias_Correction_Hidden(outj,outk,inputs,target,wkj):
     # Correction of Weights and Bias between Input and Hidden Layer.
     # Calculate 𝑑𝑤𝑗𝑗𝑖 and 𝑑𝑏𝑗𝑗𝑖
     skl = (outk - target) * outk*(1-outk)
     dwjji= np.multiply.outer(outj *(1 - outj) * np.dot(skl,wkj),inputs)
     dbjii = outj *(1 - outj) * np.dot(skl,wkj)
-
     return dwjji, dbjii
+
 def Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii ):
     # Saving_Weights_Bias() implemented inside
     # Update Weights and Bias.
@@ -90,40 +72,21 @@ def Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii ):
     n = 0.02
     wkjj = wkj - n*dwkkj
     bkkj = bias_k - n*dbkkj
-    # print("wk+")
-    # print(wkjj)
-    # print("bias_k+")
-    # print(bkkj)
 
     # Calculate 𝑤𝑗𝑗𝑖+ and 𝑏𝑗𝑗𝑖+
     wjji = wji - n *dwjji
     bjji = bias_j - n* dbjii
-    # print("wj+")
-    # print(wjji[0][300])
-    # print("bias_j+")
-    # print(bjji)
     return wkjj,bkkj,wjji,bjji
+
 # def Saving_Weights_Bias(wkjj,bkkj,wjji,bjji):
-#     # Save 𝑤𝑘𝑘𝑗 and 𝑏𝑘𝑘𝑗
-#     # Save 𝑤𝑗𝑗𝑖 and 𝑏𝑗𝑗𝑖
+    # Save 𝑤𝑘𝑘𝑗 and 𝑏𝑘𝑘𝑗
+    # Save 𝑤𝑗𝑗𝑖 and 𝑏𝑗𝑗𝑖
 
-# wji,wkj,bias_j,bias_k,target = Weight_Initialization()
-# inputs= np.array([0.2,0.5])
-# wji= np.array([[0.1,0.2],[0.3,0.4]])
-# wkj= np.array([[0.5,0.6],[0.7,0.8]])
-# bias_j = np.array([0.2,0.2])
-# bias_k = np.array([0.4,0.4])
-# target = np.array([0.2,0.8])
-# # inputs= np.array([0.5,0.8])
-# # wji= np.array([[-0.8,0.2],[-0.5,-0.2],[0.4,0.4]])
-# # wkj= np.array([[-0.3,0.15,0.4],[0.4,-0.5,0.1]])
-# # bias_j = np.array([0.4,0.2,0.1])
-# # bias_k = np.array([0.3,0.15])
-# # target = np.array([0.7,0.4])
-# netj,outj = Forward_Input_Hidden(inputs, wji, bias_j)
-# netk,outk = Forward_Hidden_Output(outj, wkj, bias_k)
 
-# dwkkj,dbkkj = Weight_Bias_Correction_Output(outk,target, outj)
+if __name__ == "__main__":
+    OUTPUT_NEURONS = 20
+    INPUT_NEURONS = 28 * 28
+    HIDDEN_NEURONS = 250
 
 # dwjji, dbjii = Weight_Bias_Correction_Hidden(outj,outk,inputs,target,wkj)
 

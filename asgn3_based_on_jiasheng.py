@@ -112,6 +112,31 @@ def loading_Weights_Bias():
 
     return wjji, bjji, wkkj, bkkj
 
+def auto_segmentation():
+    exam = "./target"
+
+    for image_file_name in os.listdir(exam):
+        img =cv2.imread(os.path.join(exam,image_file_name))
+        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        height, width = gray.shape
+
+        _, binary_image = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
+        contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        sorted_contours = sorted(contours, key=cv2.contourArea, reverse=True)
+
+        img_area = width * height
+        num = 1
+        for contour in sorted_contours:
+            contour_area = cv2.contourArea(contour)
+            ratio = contour_area / img_area
+            if ratio > 0.01:
+                x, y, w, h = cv2.boundingRect(contour)
+                character = img[y:y+h, x:x+w]
+                name = image_file_name.split('.')[0] + "_0" + str(num) + ".jpg"
+                path = os.path.join("./segmented_car-number-plate", name)
+                cv2.imwrite(path, character)
+                num += 1
+
 
 if __name__ == "__main__":
     """
@@ -135,7 +160,7 @@ if __name__ == "__main__":
     Check_for_End(out_k, targets)
     dwkkj, dbkkj = Weight_Bias_Correction_Output(out_j, out_k, wkj, bias_k, targets)
     Weight_Bias_Update(wkj, bias_k, dwkkj, dbkkj)
-    """
+    
 
     # Using real images
     INPUT_NEURONS = 28*28
@@ -146,11 +171,11 @@ if __name__ == "__main__":
     i = 0
     j = 0
 
-    target_fd = "./training"
+    train_fd = "./alex_train"
 
     alphabets_targets = {'B':10, 'F':11, 'L':12, 'M':13, 'P':14, 'Q':15, 'T':16, 'U':17, 'V':18, 'W':19}
 
-    for name in os.listdir(target_fd):
+    for name in os.listdir(train_fd):
         label = name[0]
         try:
             label_value = int(label)
@@ -161,7 +186,7 @@ if __name__ == "__main__":
         targets = np.zeros(20)
         targets[label_value] = 1
 
-        image = cv2.imread(os.path.join(target_fd, name))
+        image = cv2.imread(os.path.join(train_fd, name))
         resized = cv2.resize(image, (28, 28))
         # convert picture to gray scale
         img_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
@@ -194,5 +219,39 @@ if __name__ == "__main__":
 
     Saving_Weights_Bias(wji, bias_j, wkj, bias_k)
 
-    loading_Weights_Bias()
+    # testing
+    test_fd = "./character_image/test_case"
+    total = len(test_fd)
+    correct = 0
+    for name in os.listdir(test_fd):
+        image = cv2.imread(os.path.join(test_fd, name))
+        resized = cv2.resize(image, (28, 28))
+        # convert picture to gray scale
+        img_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+        _, img = cv2.threshold(img_gray, 127, 255, cv2.THRESH_BINARY)
+        x_flattend = img.reshape(1, 28 * 28)
+
+        x_flattend = np.squeeze(x_flattend)
+        x_flattend = x_flattend / 255
+        inputs = x_flattend
+        netj, outj = Forward_Input_Hidden(inputs, wji, bias_j)
+        netk, outk = Forward_Hidden_Output(outj, wkj, bias_k)
+
+        prediction = np.argmax(outk)
+        if prediction > 10:
+            char = None
+            for key, value in alphabets_targets.items():
+                if value == prediction:
+                    prediction = key
+
+        if name[0] == str(prediction):
+            correct += 1
+
+    print("Accuracy = " + str(correct/total) + '%')
+    
+    """
+
+    auto_segmentation()
+
+
 
