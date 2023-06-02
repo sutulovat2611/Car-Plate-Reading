@@ -18,12 +18,10 @@ import math
 def Weight_Initialization():
     # Initializing of the Weights. Random float number between -0.5 to 0.5 for weights.
     np.random.seed(1)
-    inputs= np.random.uniform(-0.5, 0.5, size=(INPUT_NEURONS))
     wji= np.random.uniform(-0.5, 0.5, size=(HIDDEN_NEURONS, INPUT_NEURONS))
     wkj = np.random.uniform(-0.5, 0.5, size=(OUTPUT_NEURONS, HIDDEN_NEURONS))
     bias_j = np.random.uniform(0, 1, size=(HIDDEN_NEURONS))
     bias_k = np.random.uniform(0, 1, size=(OUTPUT_NEURONS))
-    targets = np.random.uniform(0, 1, size=(OUTPUT_NEURONS))
     return  wji,wkj,bias_j,bias_k
 
 # def Read_Files():
@@ -58,7 +56,7 @@ def Check_for_End(Outk, targets, user_set):
     # returns true or false
     def Error_Correction(outs, targets):
         total_error= np.sum(((outs - targets)**2))/OUTPUT_NEURONS
-        print(((outs - targets)**2))
+        # print(total_error)
         return total_error
     
     if Error_Correction(Outk, targets)< user_set:
@@ -89,7 +87,7 @@ def Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii ):
     # Saving_Weights_Bias() implemented inside
     # Update Weights and Bias.
     # Calculate 𝑤𝑘𝑘𝑗+ and 𝑏𝑘𝑘𝑗+
-    n = 0.1
+    n = 0.5
     wkjj = wkj - n*dwkkj
     bkkj = bias_k - n*dbkkj
     # print("wk+")
@@ -101,7 +99,7 @@ def Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii ):
     wjji = wji - n *dwjji
     bjji = bias_j - n* dbjii
     # print("wj+")
-    # print(wjji)
+    # print(wjji[0][300])
     # print("bias_j+")
     # print(bjji)
     return wkjj,bkkj,wjji,bjji
@@ -110,12 +108,12 @@ def Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii ):
 #     # Save 𝑤𝑗𝑗𝑖 and 𝑏𝑗𝑗𝑖
 
 # wji,wkj,bias_j,bias_k,target = Weight_Initialization()
-# # inputs= np.array([0.2,0.5])
-# # wji= np.array([[0.1,0.2],[0.3,0.4]])
-# # wkj= np.array([[0.5,0.6],[0.7,0.8]])
-# # bias_j = np.array([0.2,0.2])
-# # bias_k = np.array([0.4,0.4])
-# # target = np.array([0.2,0.8])
+# inputs= np.array([0.2,0.5])
+# wji= np.array([[0.1,0.2],[0.3,0.4]])
+# wkj= np.array([[0.5,0.6],[0.7,0.8]])
+# bias_j = np.array([0.2,0.2])
+# bias_k = np.array([0.4,0.4])
+# target = np.array([0.2,0.8])
 # # inputs= np.array([0.5,0.8])
 # # wji= np.array([[-0.8,0.2],[-0.5,-0.2],[0.4,0.4]])
 # # wkj= np.array([[-0.3,0.15,0.4],[0.4,-0.5,0.1]])
@@ -131,41 +129,44 @@ def Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii ):
 
 # Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii)
 
-# # Error_Correction(outk, target)
+# Error_Correction(outk, target)
 
+import random
 
-
-OUTPUT_NEURONS =4
+OUTPUT_NEURONS =6
 INPUT_NEURONS = 28* 28
 HIDDEN_NEURONS = 16
-ITTERATIONS = 50
+ITTERATIONS = 200
 ERROR = 0.005
 i= 0 
 j= 0
 
 
 
-target_fd = "./Car-Plate-Reading/character_image/train_case"
-
-for name in listdir(target_fd):
-    # if name.startswith("4"):
-    #     targets1 = [0,0,0,0,1]
-
-    if name.endswith("0.jpg") :
+target_fd = "./Car-Plate-Reading/character_image/train_case2"
+file_list = os.listdir(target_fd)
+random.seed(1)
+random.shuffle(file_list)
+for name in file_list:
+    if name.startswith("0") :
         # Read the image file using OpenCV
-        targets1 = [1,0,0,0]
-    elif name.endswith('1.jpg') :
-        targets1 = [0,1,0,0]
-    elif name.endswith('2.jpg') :
-        targets1 = [0,0,1,0]
-    elif name.endswith("3.jpg"):
-        targets1 = [0,0,0,1]
+        targets1 = [1,0,0,0,0,0]
+    elif name.startswith('1') :
+        targets1 = [0,1,0,0,0,0]
+    elif name.startswith('2') :
+        targets1 = [0,0,1,0,0,0]
+    elif name.startswith("3"):
+        targets1 = [0,0,0,1,0,0]
+    elif name.startswith("4"):
+        targets1 = [0,0,0,0,1,0]
+    elif name.startswith("5"):
+        targets1 = [0,0,0,0,0,1]
     image =cv2.imread(os.path.join(target_fd,name))
     resized = cv2.resize(image, (28,28))
     # convert picture to gray scale
     img_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-    _,img = cv2.threshold(img_gray,127,255,cv2.THRESH_BINARY)
-    x_flattend = img.reshape(1, 28*28)
+    # _,img = cv2.threshold(img_gray,127,255,cv2.THRESH_BINARY)
+    x_flattend = img_gray.reshape(1, 28*28)
     # plt.matshow(img_gray)
     x_flattend = np.squeeze(x_flattend)
     x_flattend = x_flattend/255
@@ -174,6 +175,7 @@ for name in listdir(target_fd):
     if(j == 0):
         wji,wkj,bias_j,bias_k = Weight_Initialization()
         j+=1
+        
     for i in range(ITTERATIONS):
         netj,outj = Forward_Input_Hidden(inputs, wji, bias_j)
         netk,outk = Forward_Hidden_Output(outj, wkj, bias_k)
@@ -182,23 +184,14 @@ for name in listdir(target_fd):
             # print(name)
             print(np.argmax(outk))
             print(outk)
-            wjji = wji
-            wkjj = wkj
-            bjji=bias_j
-            bkkj =bias_k     
             break
         else:
             dwkkj,dbkkj = Weight_Bias_Correction_Output(outk,targets1, outj)
             dwjji, dbjii = Weight_Bias_Correction_Hidden(outj,outk,inputs,targets1,wkj)
-            wkjj,bkkj,wjji,bjji = Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii)
-        wji = wjji
-        wkj = wkjj
-        bias_j = bjji
-        bias_k = bkkj
+            wkj,bias_k,wji,bias_j = Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii)
+
 
         
-
-
 #test
 target_fd = "./Car-Plate-Reading/character_image/test_case"
 for name in listdir(target_fd):
@@ -206,14 +199,16 @@ for name in listdir(target_fd):
     resized = cv2.resize(image, (28,28))
     # convert picture to gray scale
     img_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-    x_flattend = img_gray.reshape(1, 28*28)
+    _,img = cv2.threshold(img_gray,127,255,cv2.THRESH_BINARY)
+    x_flattend = img.reshape(1, 28*28)
+
     x_flattend = np.squeeze(x_flattend)
     x_flattend = x_flattend/255
     inputs  = x_flattend
     netj,outj = Forward_Input_Hidden(inputs, wji, bias_j)
     netk,outk = Forward_Hidden_Output(outj, wkj, bias_k)
     print(np.argmax(outk))
-    print(outk)
+    # print(outk)
 
-#result not good zz 
-#a
+# #result not good zz 
+# #a
