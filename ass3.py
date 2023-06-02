@@ -63,8 +63,8 @@ def Weight_Bias_Correction_Hidden(outj,outk,inputs,target,wkj):
     skl = (outk - target) * outk*(1-outk)
     dwjji= np.multiply.outer(outj *(1 - outj) * np.dot(skl,wkj),inputs)
     dbjii = outj *(1 - outj) * np.dot(skl,wkj)
-
     return dwjji, dbjii
+
 def Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii ):
     # Saving_Weights_Bias() implemented inside
     # Update Weights and Bias.
@@ -83,14 +83,13 @@ def Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii ):
     # Save 𝑤𝑗𝑗𝑖 and 𝑏𝑗𝑗𝑖
 
 
-
 if __name__ == "__main__":
     OUTPUT_NEURONS = 20
     INPUT_NEURONS = 28 * 28
-    HIDDEN_NEURONS = 100
+    HIDDEN_NEURONS = 250
 
-    ITERATIONS = 200
-    ERROR = 0.001
+    ITERATIONS = 250
+    ERROR = 0.005
     j = 0
 
     # PERFORMING TRAINING
@@ -151,7 +150,12 @@ if __name__ == "__main__":
         x_flattend = img.reshape(1, 28*28) # making proper format
         x_flattend = np.squeeze(x_flattend)
         x_flattend = x_flattend/255
-        inputs  = x_flattend
+
+        mean = np.mean(x_flattend)
+        std = np.std(x_flattend)
+        x_normalized = (x_flattend - mean) / std
+
+        inputs  = x_normalized
 
         # Initializing weights in the beginning only
         if(j == 0):
@@ -168,6 +172,10 @@ if __name__ == "__main__":
                 dwkkj,dbkkj = Weight_Bias_Correction_Output(outk,targets, outj)
                 dwjji, dbjii = Weight_Bias_Correction_Hidden(outj,outk,inputs,targets,wkj)
                 wkj, bias_k, wji, bias_j = Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii)
+        # print(name)
+        # print(outk)
+
+        # print(np.argmax(outk))
 
 
     # PERFORMING TESTING
@@ -224,7 +232,15 @@ if __name__ == "__main__":
         x_flattend = img.reshape(1, 28*28) # making proper format
         x_flattend = np.squeeze(x_flattend)
         x_flattend = x_flattend/255
-        inputs  = x_flattend
+
+        mean = np.mean(x_flattend)
+        std = np.std(x_flattend)
+        x_normalized = (x_flattend - mean) / std
+
+
+
+
+        inputs  = x_normalized
 
         netj,outj = Forward_Input_Hidden(inputs, wji, bias_j)
         netk,outk = Forward_Hidden_Output(outj, wkj, bias_k)
@@ -242,4 +258,4 @@ if __name__ == "__main__":
             sum+=1
 
     accuracy = sum/len(classif)
-    print("Classification accuracy is " + accuracy)
+    print("Classification accuracy is " + str(accuracy))
