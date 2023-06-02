@@ -7,6 +7,7 @@ import math
 import functools
 
 
+
 def Weight_Initialization():
     # Initializing of the Weights. Random float number between -0.5 to 0.5 for weights.
     np.random.seed(1)
@@ -16,7 +17,6 @@ def Weight_Initialization():
     bias_k = np.random.uniform(0, 1, size=(OUTPUT_NEURONS))
     return  wji,wkj,bias_j,bias_k
 
-
 def Forward_Input_Hidden(inputs,wji, bias_j):
     # Forward Propagation from Input -> Hidden Layer.
     # Obtain the results at each neuron in the hidden layer.
@@ -25,11 +25,11 @@ def Forward_Input_Hidden(inputs,wji, bias_j):
     Outj = 1/(1 + math.e**-(Netj + np.transpose(bias_j)))
     return Netj,Outj
 
-def Forward_Hidden_Output(Netj, wkj, bias_k):
+def Forward_Hidden_Output(OutJ, wkj, bias_k):
     # Forward Propagation from Input -> Hidden Layer.
     # Obtain the results at each neuron in the hidden layer.
-    # Calculate 𝑁𝑒𝑡kand 𝑂𝑢𝑡k
-    Netk = np.dot(Netj,wkj.T) 
+    # Calculate 𝑁𝑒𝑡k and 𝑂𝑢𝑡k
+    Netk = np.dot(OutJ,wkj.T) 
     Outk = 1/(1 + math.e**-(Netk + np.transpose(bias_k)))
     return Netk, Outk
 
@@ -40,7 +40,7 @@ def Check_for_End(Outk, targets, user_set, i):
         total_error= np.sum(((outs - targets)**2))/OUTPUT_NEURONS
         return total_error
     
-    if Error_Correction(Outk, targets)< user_set or i > ITTERATIONS:
+    if Error_Correction(Outk, targets)< user_set or i > ITERATIONS:
         return True
     else: 
         return False
@@ -75,6 +75,7 @@ def Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii ):
     # Calculate 𝑤𝑗𝑗𝑖+ and 𝑏𝑗𝑗𝑖+
     wjji = wji - N *dwjji
     bjji = bias_j - N* dbjii
+
     return wkkj,bkkj,wjji,bjji
 
 def Saving_Weights_Bias(wkkj,bkkj,wjji,bjji):
@@ -129,22 +130,22 @@ def auto_segmentation():
             if label == 0:
                 continue
             # Otherwise, constrsuct the label mask to display only connected component for the current label
-            labelMask = np.zeros(thresh.shape, dtype="uint8")
-            labelMask[labels == label] = 255        
+            label_mask = np.zeros(thresh.shape, dtype="uint8")
+            label_mask[labels == label] = 255        
             # Add to our mask
-            mask = cv2.add(mask, labelMask)
+            mask = cv2.add(mask, label_mask)
 
         # Find contours and get bounding box for each contour
         cnts, _ = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        boundingBoxes = [cv2.boundingRect(c) for c in cnts]
+        bound_box = [cv2.boundingRect(c) for c in cnts]
 
         # Sort the bounding boxes from left to right
         def compare(rect1, rect2): 
             return rect1[0] - rect2[0]
-        boundingBoxes = sorted(boundingBoxes, key=functools.cmp_to_key(compare) )
+        bound_box = sorted(bound_box, key=functools.cmp_to_key(compare) )
         char = 0
         # Get contours
-        for bnd in boundingBoxes:
+        for bnd in bound_box:
             x,y,w,h = bnd
             if (h>0.5*image.shape[0] and h<0.95*image.shape[0]):
                 # Crops out the detected area from the original image
@@ -167,6 +168,7 @@ def img_manipulation(target_fd,name):
     resized = cv2.resize(image, (28,28)) # resizing image
     img_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)  # convert picture to gray scale
     _,img = cv2.threshold(img_gray,127,255,cv2.THRESH_BINARY) # applying thresholding
+    
        
     # Representing the image in array form
     x_flattend = img.reshape(1, 28*28)
@@ -187,14 +189,15 @@ if __name__ == "__main__":
     OUTPUT_NEURONS = 20
     INPUT_NEURONS = 28* 28 # total number of pixels in an image
     HIDDEN_NEURONS = 100
-    ITTERATIONS = 300 # max number of iterations to be performed
-    ERROR = 0.001 # acceptable error rate
+    ITERATIONS = 300 # max number of iterations to be performed
+    ERROR = 0.0005 # acceptable error rate
     N = 0.1
-    j= 0
+    j = 0
     alphabets_targets = {'B':10, 'F':11, 'L':12, 'M':13, 'P':14, 'Q':15, 'T':16, 'U':17, 'V':18, 'W':19}
     accuracy = 0
     total = 0
     wkkj,bkkj,wjji,bjji = 0,0,0,0
+    
     ############################################################################################################
     # TRAINING
     ############################################################################################################
@@ -205,6 +208,7 @@ if __name__ == "__main__":
     # Randomizing the dataset order
     random.seed(1)
     random.shuffle(file_list)
+    
 
     # Going through each case in the folder
     for name in file_list:
@@ -229,7 +233,7 @@ if __name__ == "__main__":
             j+=1
         i=0
         # Performing training
-        while i < ITTERATIONS:
+        while i < ITERATIONS:
             # Forward Propagation from Input -> Hidden Layer.
             netj,outj = Forward_Input_Hidden(inputs, wji, bias_j)
             # Forward Propagation from Hidden -> Output Layer.
@@ -241,13 +245,13 @@ if __name__ == "__main__":
                 dwkkj,dbkkj = Weight_Bias_Correction_Output(outk,targets, outj)
                 dwjji, dbjii = Weight_Bias_Correction_Hidden(outj,outk,inputs,targets,wkj)
                 wkj,bias_k,wji,bias_j = Weight_Bias_Update(wkj,dwkkj, bias_k, dbkkj, wji, dwjji,bias_j,dbjii)
+            i+=1
         
         # Finding the training data that does not met the criteria
-        if (np.max(outk)<0.9):
-            print(name)
-            print(np.max(outk))
+        # if (np.max(outk)<0.9):
+            # print(name)
+            # print(np.max(outk))
 
-            i+=1
     # Saving weights & bias
     Saving_Weights_Bias(wkj,bias_k,wji,bias_j)
 
@@ -283,7 +287,6 @@ if __name__ == "__main__":
     ############################################################################################################
     # TESTING WITH AUTO-SEGMENTED IMAGES OF MALAYSIAN CAR PLATE
     ############################################################################################################
-
     total = 0
     accuracy = 0
     # Performing auto segmentation
@@ -311,7 +314,6 @@ if __name__ == "__main__":
         
         if np.argmax(outk) == label_value :
             accuracy +=1
-    print(accuracy)
     print("Accuracy for testing with auto-segmented images: " + str(accuracy/total))
 
 
